@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 
 export default function HospitalDashboard() {
+    // 1. APPLICATION MEMORY CONTROL MATRICES
     const [userSession, setUserSession] = useState(null);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -8,7 +9,7 @@ export default function HospitalDashboard() {
     const [activeModule, setActiveModule] = useState('DASHBOARD');
     const [selectedDepartment, setSelectedDepartment] = useState('MAIN');
 
-    const [liveBeds] = useState([
+    const [liveBeds, setLiveBeds] = useState([
         { id: 1, number: 'PEDS-01', ward: 'Pediatric Ward', status: 'AVAILABLE', type: 'KIDS' },
         { id: 2, number: 'ICU-05', ward: 'Adult Intensive Care', status: 'OCCUPIED', type: 'ADULT' },
         { id: 3, number: 'TX-09', ward: 'Organ Transplant Wing', status: 'DIRTY', type: 'ORGAN' }
@@ -23,15 +24,17 @@ export default function HospitalDashboard() {
         { code: '4010-OPD-REV', name: 'Outpatient Revenue Line', type: 'REVENUE', balance: 320000.00 }
     ]);
 
+    // 2. HEALTHCARE THEMING PALETTES MAP
     const getThemeStyles = () => {
-        if (selectedDepartment === 'KIDS') return { bg: 'bg-pink-50', header: 'bg-gradient-to-r from-pink-400 to-blue-300 text-white shadow-md', text: 'text-pink-900', card: 'bg-white border-2 border-pink-200 p-6 rounded-2xl shadow-sm' };
-        if (selectedDepartment === 'ADULT') return { bg: 'bg-slate-900', header: 'bg-slate-800 text-white shadow-md border-b-2 border-blue-500', text: 'text-white', card: 'bg-slate-800 border border-slate-700 p-6 rounded-xl text-white shadow-md' };
-        if (selectedDepartment === 'ORGAN') return { bg: 'bg-stone-100', header: 'bg-stone-800 text-emerald-400 shadow-md', text: 'text-stone-800', card: 'bg-stone-50 border border-emerald-300 p-6 rounded-lg shadow-sm' };
+        if (selectedDepartment === 'KIDS') return { bg: 'bg-pink-50', header: 'bg-gradient-to-r from-pink-400 to-blue-300 text-white shadow-md', text: 'text-pink-900', card: 'bg-white border-2 border-pink-200 p-6 rounded-2xl' };
+        if (selectedDepartment === 'ADULT') return { bg: 'bg-slate-900', header: 'bg-slate-800 text-white shadow-md border-b-2 border-blue-500', text: 'text-white', card: 'bg-slate-800 border border-slate-700 p-6 rounded-xl text-white' };
+        if (selectedDepartment === 'ORGAN') return { bg: 'bg-stone-100', header: 'bg-stone-800 text-emerald-400 shadow-md', text: 'text-stone-800', card: 'bg-stone-50 border border-emerald-300 p-6 rounded-lg' };
         return { bg: 'bg-slate-50', header: 'bg-white text-slate-900 shadow-md border-b-4 border-blue-600', text: 'text-slate-900', card: 'bg-white border-l-4 border-blue-500 p-6 shadow-md' };
     };
 
     const currentTheme = getThemeStyles();
 
+    // 3. SECURITY MATRIX PROFILE SIMULATOR
     const mockAuthenticate = (e) => {
         e.preventDefault();
         setLoginError('');
@@ -42,10 +45,21 @@ export default function HospitalDashboard() {
         } else if (email === 'marketing@wecure.hospital' && password === 'WecureCrm2026!') {
             setUserSession({ name: 'Karan Singh', role: 'MARKETING_OFFICER', allowedModules: ['DASHBOARD', 'CRM'] });
         } else {
-            setLoginError('Invalid qualifications mapped.');
+            setLoginError('Invalid matrix authentication profile tokens matched.');
         }
     };
 
+    const toggleBedState = (id) => {
+        setLiveBeds(prev => prev.map(bed => {
+            if (bed.id === id) {
+                const nextStatus = bed.status === 'AVAILABLE' ? 'OCCUPIED' : bed.status === 'OCCUPIED' ? 'DIRTY' : 'AVAILABLE';
+                return { ...bed, status: nextStatus };
+            }
+            return bed;
+        }));
+    };
+
+    // 4. SECURE USER SYSTEM LOG IN PORTAL
     if (!userSession) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-slate-900 px-4">
@@ -55,22 +69,23 @@ export default function HospitalDashboard() {
                     {loginError && <div className="mb-4 bg-rose-50 text-rose-600 p-3 rounded-xl text-xs font-bold text-center">{loginError}</div>}
                     <form onSubmit={mockAuthenticate} className="space-y-4">
                         <div>
-                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">Identity</label>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">Identity username</label>
                             <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="mt-1 block w-full px-4 py-2 border rounded-xl outline-none" placeholder="admin@wecure.hospital" />
                         </div>
                         <div>
                             <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">Password</label>
                             <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="mt-1 block w-full px-4 py-2 border rounded-xl outline-none" placeholder="••••••••" />
                         </div>
-                        <button type="submit" className="w-full py-3 font-bold text-sm bg-blue-600 text-white rounded-xl shadow-md">Authenticate</button>
+                        <button type="submit" className="w-full py-3 font-bold text-sm bg-blue-600 text-white rounded-xl shadow-md">Authenticate Secure Identity</button>
                     </form>
                 </div>
             </div>
         );
     }
 
+    // 5. MAIN INTEGRATED WORKSPACE DESK
     return (
-        <div className={`min-h-screen ${currentTheme.bg} transition-all duration-300 flex flex-col`}>
+        <div className={`min-h-screen ${currentTheme.bg} flex flex-col`}>
             <header className={`px-6 py-4 flex items-center justify-between ${currentTheme.header}`}>
                 <div className="flex items-center gap-4">
                     <div className="bg-blue-600 text-white px-3 py-1 rounded font-black text-sm">WECURE</div>
@@ -80,8 +95,8 @@ export default function HospitalDashboard() {
                     </div>
                 </div>
                 <div className="flex bg-black bg-opacity-20 p-1.5 rounded-xl gap-1">
-                    <button onClick={() => setSelectedDepartment('MAIN')} className="px-3 py-1 text-xs font-bold rounded-lg bg-white text-slate-900 shadow">Main</button>
-                    <button onClick={() => setSelectedDepartment('KIDS')} className="px-3 py-1 text-xs font-bold rounded-lg bg-pink-500 text-white shadow">Kids</button>
+                    <button onClick={() => setSelectedDepartment('MAIN')} className="px-3 py-1 text-xs font-bold rounded-lg bg-white text-slate-900 shadow">Main Portal</button>
+                    <button onClick={() => setSelectedDepartment('KIDS')} className="px-3 py-1 text-xs font-bold rounded-lg bg-pink-500 text-white shadow">Pediatrics</button>
                     <button onClick={() => setSelectedDepartment('ADULT')} className="px-3 py-1 text-xs font-bold rounded-lg bg-slate-700 text-white shadow">Adults</button>
                     <button onClick={() => setSelectedDepartment('ORGAN')} className="px-3 py-1 text-xs font-bold rounded-lg bg-emerald-600 text-white shadow">Organs</button>
                 </div>
@@ -93,46 +108,28 @@ export default function HospitalDashboard() {
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2">Modules</p>
                         {userSession.allowedModules.map((mod) => (
                             <button key={mod} onClick={() => setActiveModule(mod)} className={`w-full text-left px-3 py-2 text-xs font-bold rounded-xl ${activeModule === mod ? 'bg-blue-50 text-blue-700' : 'text-slate-600'}`}>
-                                {mod}
+                                {mod.replace('_', ' ')}
                             </button>
                         ))}
                     </div>
-                    <button onClick={() => setUserSession(null)} className="w-full text-center py-2 text-xs font-bold rounded-xl text-rose-600 border">Logout</button>
+                    <button onClick={() => setUserSession(null)} className="w-full text-center py-2 text-xs font-bold rounded-xl text-rose-600 border">Clear Session Token</button>
                 </aside>
 
                 <main className="flex-1 p-6 space-y-6">
                     {activeModule === 'DASHBOARD' && (
                         <div className="space-y-6">
                             <h2 className={`text-2xl font-black ${currentTheme.text}`}>Overview Analytics</h2>
-                            <div className="bg-gradient-to-r from-blue-700 to-purple-800 p-6 rounded-2xl shadow text-white relative">
-                                <h4 className="text-base font-bold">🤖 AI Operational Clinical Agent</h4>
-                                <p className="text-xs text-blue-100 mt-1">"System evaluation complete. 1 transfer pending validation. Ledgers match data constraints flawlessly."</p>
+                            <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-800 p-6 rounded-2xl shadow-xl text-white border-b-4 border-yellow-400 relative overflow-hidden">
+                                <div className="absolute right-0 top-0 opacity-10 font-black text-9xl pointer-events-none">AI</div>
+                                <div className="flex items-start gap-4">
+                                    <div className="bg-white bg-opacity-20 p-3 rounded-xl text-xl animate-pulse">🤖</div>
+                                    <div className="space-y-1">
+                                        <span className="bg-yellow-400 text-slate-900 text-[9px] font-black uppercase px-2 py-0.5 rounded-full">Autonomous Clinical Agent</span>
+                                        <h4 className="text-base font-bold tracking-tight">Live Operations Status Update</h4>
+                                        <p className="text-xs text-blue-100 max-w-3xl mt-1">"System evaluation complete. 1 inpatient transfer pending validation in the Pediatric department. Double-entry general ledgers match data constraints flawlessly."</p>
+                                    </div>
+                                </div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div className={currentTheme.card}><h4>Beds Map</h4><p className="text-2xl font-black mt-2">{liveBeds.length} Monitored</p></div>
                                 <div className={currentTheme.card}><h4>CRM Leads</h4><p className="text-2xl font-black mt-2">{crmLeads.length} Pipelines</p></div>
-                                <div className={currentTheme.card}><h4>Audit Status</h4><p className="text-2xl font-black mt-2 text-emerald-600">✓ Balanced</p></div>
-                            </div>
-                        </div>
-                    )}
-
-                    {activeModule === 'BED_MANAGEMENT' && (
-                        <div className="space-y-6">
-                            <h2 className={`text-2xl font-black ${currentTheme.text}`}>Real-Time Beds Map</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                {liveBeds.map(bed => (
-                                    <div key={bed.id} className={`${currentTheme.card} flex flex-col justify-between h-28`}>
-                                        <h3 className="font-black text-lg">{bed.number}</h3>
-                                        <div className="flex justify-between text-xs font-bold">
-                                            <span>{bed.ward}</span>
-                                            <span className="text-blue-600">{bed.status}</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {activeModule === 'FINANCE' && (
-                        <div className="space-y-6">
-                            <h2 className={`text-2xl font-black ${currentTheme.text}`}>Double-Entry General Ledger</h2>
