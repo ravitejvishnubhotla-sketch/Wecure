@@ -3,33 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wecure Super Speciality Hospital ERP</title>
+    <title>Wecure Super Speciality Hospital | European Standard Clinical ERP</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Tailwind Play CDN with full color palette engine -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind Play CDN with Medicover Extended Palette -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
                     },
                     colors: {
-                        navy: {
-                            900: '#031B4E',
-                            800: '#052C7D',
-                            700: '#0A3D99'
+                        brand: {
+                            navy: '#002B49',
+                            dark: '#001A2C',
+                            cyan: '#00A3E0',
+                            cyanHover: '#008AC0',
+                            teal: '#00828A',
+                            emerald: '#00875A',
+                            rose: '#E11D48',
+                            slate: '#F4F7F9'
                         }
                     }
                 }
             }
         }
     </script>
+    <style>
+        * { font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background-color: #F4F7F9; color: #001A2C; }
+    </style>
 </head>
-<body class="bg-slate-50 font-sans text-slate-900 antialiased">
+<body class="bg-brand-slate text-brand-dark antialiased">
     <div id="root"></div>
 </body>
 </html>
