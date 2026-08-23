@@ -1,10 +1,11 @@
 {
-  "name": "wecure-backend",
+  "name": "wecure-unified-system",
   "version": "1.0.0",
-  "description": "Multi-Specialty Hospital ERP Backend Engine",
+  "description": "Multi-Specialty Hospital ERP System",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "build": "react-scripts build"
   },
   "dependencies": {
     "@socket.io/redis-adapter": "^8.3.0",
@@ -12,7 +13,22 @@
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.12.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-scripts": "^5.0.1",
     "redis": "^4.6.14",
     "socket.io": "^4.7.5"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }
