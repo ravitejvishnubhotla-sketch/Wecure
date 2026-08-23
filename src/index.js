@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+    import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 function App() {
@@ -75,7 +75,6 @@ function App() {
         e.preventDefault();
         setLoginError('');
 
-        // Static profiles defining individual structural privilege matrices
         if (email === 'admin@wecure.hospital' && password === 'WecureAdmin2026!') {
             setUserSession({
                 name: 'Chief Systems Administrator',
@@ -88,7 +87,7 @@ function App() {
                 name: 'Dr. Anand Sharma (Pediatrics)',
                 role: 'ATTENDING_PHYSICIAN',
                 tenant: 'Corporate HQ Branch',
-                allowedModules: ['DASHBOARD', 'BED_MANAGEMENT'] // Finance and CRM hidden automatically
+                allowedModules: ['DASHBOARD', 'BED_MANAGEMENT']
             });
         } else if (email === 'marketing@wecure.hospital' && password === 'WecureCrm2026!') {
             setUserSession({
@@ -98,11 +97,10 @@ function App() {
                 allowedModules: ['DASHBOARD', 'CRM']
             });
         } else {
-            setLoginError('Invalid matrix authentication profile tokens matched.');
+            setLoginError('Invalid administrative matrix credentials.');
         }
     };
 
-    // 4. ACTION CONTROLLERS
     const toggleBedState = (id) => {
         setLiveBeds(prev => prev.map(bed => {
             if (bed.id === id) {
@@ -113,7 +111,6 @@ function App() {
         }));
     };
 
-    // LOGIN MASK VIEW LAYOUT
     if (!userSession) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-tr from-slate-900 via-blue-950 to-slate-900 px-4">
@@ -139,9 +136,6 @@ function App() {
                         </div>
                         <button type="submit" className="w-full py-3 px-4 border border-transparent font-bold text-sm tracking-wide rounded-xl text-white bg-blue-600 hover:bg-blue-700 shadow-md hover:shadow-xl transition-all">Authenticate Secure Identity</button>
                     </form>
-                    <div className="mt-6 pt-4 border-t border-slate-100 text-center">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Enterprise Role Architecture Active</p>
-                    </div>
                 </div>
             </div>
         );
@@ -149,7 +143,6 @@ function App() {
 
     return (
         <div className={`min-h-screen ${currentTheme.bg} transition-all duration-300 flex flex-col`}>
-            {/* COMPLIANT SYSTEM HEADER */}
             <header className={`px-6 py-4 flex items-center justify-between ${currentTheme.header} transition-all duration-300`}>
                 <div className="flex items-center gap-4">
                     <div className="bg-white p-2 rounded-xl text-slate-900 font-black text-sm tracking-tighter">WECURE</div>
@@ -159,6 +152,8 @@ function App() {
                     </div>
                 </div>
                 
-                {/* Department Selection Palette Controls */}
                 <div className="flex bg-black bg-opacity-20 p-1.5 rounded-xl gap-1">
                     <button onClick={() => setSelectedDepartment('MAIN')} className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${selectedDepartment === 'MAIN' ? 'bg-white text-slate-900 shadow' : 'text-white opacity-70 hover:opacity-100'}`}>Main Portal</button>
+                    <button onClick={() => setSelectedDepartment('KIDS')} className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${selectedDepartment === 'KIDS' ? 'bg-pink-500 text-white shadow' : 'text-white opacity-70 hover:opacity-100'}`}>Pediatrics</button>
+                    <button onClick={() => setSelectedDepartment('ADULT')} className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${selectedDepartment === 'ADULT' ? 'bg-blue-900 text-white shadow' : 'text-white opacity-70 hover:opacity-100'}`}>Adults</button>
+                    <button onClick={() => setSelectedDepartment('ORGAN')} className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${selectedDepartment === 'ORGAN' ? 'bg-emerald-600 text-white shadow' : 'text-white opacity-70 hover:opacity-100'}`}>Organs</button>
