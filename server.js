@@ -6,6 +6,7 @@ const { createAdapter } = require('@socket.io/redis-adapter');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
 const { Pool } = require('pg');
+const { clinicalAgentQueue } = require('./agentQueue');
 
 const app = express();
 app.use(express.json());
