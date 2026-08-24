@@ -163,29 +163,40 @@ app.post('/api/appointments/book', async (req, res) => {
 app.post('/api/emergency/triage', async (req, res) => {
     const { patient_name, code, bp, spo2, bay } = req.body;
     try {
-        // Run AI Agent Analysis
-        const aiAnalysis = runClinicalAIAgent('TRIAGE_RESUSCITATION', { bp, spo2, code });
-
-        // Broadcast to on-call surgeons via SMS/WhatsApp
-        const alertMsg = `🚨 *CRITICAL EMERGENCY ALERT - ${code}*\n\nPatient: ${patient_name}\nVitals: BP ${bp} | SpO2 ${spo2}\nBay: ${bay || 'Resus Bay Alpha'}\n\n🤖 *AI Triage Recommendation*:\n${aiAnalysis.recommendation}\n\nAction Required: Report to Trauma OT Immediately.`;
-        
-        await sendOmnichannelNotification({
-            phone: '+919849012345', // Primary On-Call Physician Registry
-            channel: 'WHATSAPP',
-            template: 'CODE_RED_ALERT',
-            message: alertMsg
+        // 1. Instantly dispatch background task to BullMQ / Autonomous AI Worker
+        const job = await clinicalAgentQueue.add('TRIAGE_AND_ALLOCATE', {
+            agentType: 'TRIAGE_AND_ALLOCATE',
+            payload: { 
+                patientName: patient_name, 
+                code, 
+                vitals: { bp, spo2, bay } 
+            }
+        }, { 
+            attempts: 3, 
+            backoff: { type: 'exponential', delay: 1000 } 
         });
 
+        // 2. Realtime WebSocket Broadcast
         if (io) {
-            io.emit('emergency_code_broadcast', { patient_name, code, bp, spo2, aiAnalysis });
+            io.emit('emergency_code_broadcast', { 
+                patient_name, 
+                code, 
+                bp, 
+                spo2, 
+                bay, 
+                jobId: job.id,
+                status: 'AI_AGENT_ENGAGED'
+            });
         }
 
-        return res.status(201).json({
+        // 3. Fast Non-blocking Response (< 15ms)
+        return res.status(202).json({
             success: true,
-            aiAnalysis,
-            message: 'Code Red broadcast dispatched to trauma teams via WhatsApp & WebSocket.'
+            jobId: job.id,
+            message: 'Code Red received. Autonomous AI Triage & Bed Allocator activated in background.'
         });
     } catch (e) {
+        console.error('Triage Queue Error:', e.message);
         return res.status(500).json({ error: e.message });
     }
 });
