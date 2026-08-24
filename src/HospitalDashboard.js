@@ -1,849 +1,671 @@
 import React, { useState } from 'react';
 
 export default function HospitalDashboard() {
+    // Current Active Session
     const [user, setUser] = useState(null);
-    const [email, setEmail] = useState('admin@wecure.hospital');
-    const [password, setPassword] = useState('WecureAdmin2026!');
+    const [email, setEmail] = useState('founder@wecure.hospital');
+    const [password, setPassword] = useState('WecureFounder2026!');
     const [err, setErr] = useState('');
     const [activeTab, setActiveTab] = useState('DASHBOARD');
-    const [selectedLocation, setSelectedLocation] = useState('HYDERABAD_HITECH');
-    const [selectedCoE, setSelectedCoE] = useState('ALL');
-    const [searchQuery, setSearchQuery] = useState('');
-    const [showAiDrawer, setShowAiDrawer] = useState(false);
+
+    // Filter states
+    const [bedFilter, setBedFilter] = useState('ALL');
+    const [crmStageFilter, setCrmStageFilter] = useState('ALL');
 
     // Modals
-    const [showBookingModal, setShowBookingModal] = useState(false);
-    const [showEmergencyModal, setShowEmergencyModal] = useState(false);
-    const [showPackageModal, setShowPackageModal] = useState(false);
-    const [showCostModal, setShowCostModal] = useState(false);
-    const [selectedDoc, setSelectedDoc] = useState(null);
-    const [selectedPackage, setSelectedPackage] = useState(null);
-    const [selectedProcedure, setSelectedProcedure] = useState(null);
+    const [showUserModal, setShowUserModal] = useState(false);
+    const [showLeadModal, setShowLeadModal] = useState(false);
+    const [showSlotModal, setShowSlotModal] = useState(false);
+    const [selectedDocForSlot, setSelectedDocForSlot] = useState(null);
 
-    // Form inputs
-    const [patientName, setPatientName] = useState('');
-    const [patientPhone, setPatientPhone] = useState('');
-    const [appointmentDate, setAppointmentDate] = useState('2026-08-25');
-    const [payerType, setPayerType] = useState('CASHLESS_TPA');
-    const [channelPref, setChannelPref] = useState('WHATSAPP');
-    const [emPatient, setEmPatient] = useState('');
-    const [emCode, setEmCode] = useState('CODE_RED');
-    const [emBP, setEmBP] = useState('80/50 mmHg');
-    const [emSpo2, setEmSpo2] = useState('84%');
-
-    // AI & Comms Feeds
-    const [aiLogs, setAiLogs] = useState([
-        { id: 1, agent: 'Clinical Decision Support (CDS)', text: 'Analyzed all inpatient telemetry streams. Arterial pO2 parameters normal. Zero emergent sepsis alerts.', time: '2 mins ago', type: 'NORMAL' },
-        { id: 2, agent: 'Bed Allocation Optimizer', text: 'Recommendation: Discharge CCU-02 patient to Deluxe Room 401 to free up critical care bay for inbound STEMI.', time: '12 mins ago', type: 'ACTION' }
-    ]);
-    const [commsFeed, setCommsFeed] = useState([
-        { id: 1, channel: 'WHATSAPP', to: '+91 98490 12345', text: 'OPD Token #42 confirmed for Dr. Ashish Patel (Cardiology)', time: 'Just now' },
-        { id: 2, channel: 'SMS', to: '+91 98490 67890', text: '🚨 Code Red activated for Trauma Bay 1. On-call surgeon notified.', time: '15 mins ago' }
+    // 1. RBAC & USER REGISTRY
+    const [usersList, setUsersList] = useState([
+        { id: 'u1', name: 'Dr. Sarma Vishnubhotla', email: 'founder@wecure.hospital', pass: 'WecureFounder2026!', role: 'FOUNDER_CEO', dept: 'Executive Board', status: 'ACTIVE', permissions: { executive: true, docBookingAdmin: true, crm: true, userMgmt: true, assets: true, otAmbulance: true, triage: true } },
+        { id: 'u2', name: 'Pravin Kumar (Admin)', email: 'admin@wecure.hospital', pass: 'WecureAdmin2026!', role: 'HOSPITAL_ADMIN', dept: 'Hospital Operations', status: 'ACTIVE', permissions: { executive: true, docBookingAdmin: true, crm: true, userMgmt: true, assets: true, otAmbulance: true, triage: true } },
+        { id: 'u3', name: 'Naveen Aggarwal', email: 'management@wecure.hospital', pass: 'WecureExec2026!', role: 'EXECUTIVE_MANAGEMENT', dept: 'Finance & Strategy', status: 'ACTIVE', permissions: { executive: true, docBookingAdmin: true, crm: true, userMgmt: false, assets: true, otAmbulance: true, triage: false } },
+        { id: 'u4', name: 'Anjali Roy', email: 'pro@wecure.hospital', pass: 'WecurePro2026!', role: 'PRO_MARKETING_TEAM', dept: 'Public Relations & Growth', status: 'ACTIVE', permissions: { executive: false, docBookingAdmin: false, crm: true, userMgmt: false, assets: false, otAmbulance: false, triage: false } },
+        { id: 'u5', name: 'Dr. Ashish Patel', email: 'cardio@wecure.hospital', pass: 'WecureCardio2026!', role: 'DOCTOR_CONSULTANT', dept: 'Cardiology', status: 'ACTIVE', permissions: { executive: false, docBookingAdmin: false, crm: false, userMgmt: false, assets: false, otAmbulance: true, triage: true } },
+        { id: 'u6', name: 'Sister Margaret', email: 'nurse@wecure.hospital', pass: 'WecureNurse2026!', role: 'NURSING_DUTY', dept: 'Critical Care ICU', status: 'ACTIVE', permissions: { executive: false, docBookingAdmin: false, crm: false, userMgmt: false, assets: true, otAmbulance: true, triage: true } }
     ]);
 
-    // Hospital Locations
-    const locations = [
-        { id: 'HYDERABAD_HITECH', name: 'Hyderabad (Hitech City)', beds: 450, emergency: '040 6833 4455' },
-        { id: 'HYDERABAD_FINANCIAL', name: 'Hyderabad (Financial District)', beds: 350, emergency: '040 6833 4466' },
-        { id: 'VIZAG_MVP', name: 'Visakhapatnam (MVP Colony)', beds: 300, emergency: '0891 6833 4455' },
-        { id: 'KAKINADA', name: 'Kakinada Main Hospital', beds: 250, emergency: '0884 6833 4455' },
-        { id: 'BENGALURU_WHITEFIELD', name: 'Bengaluru (Whitefield)', beds: 400, emergency: '080 6833 4455' },
-        { id: 'NAVI_MUMBAI', name: 'Navi Mumbai Super Speciality', beds: 350, emergency: '022 6833 4455' }
-    ];
+    // New User State Form
+    const [newUserName, setNewUserName] = useState('');
+    const [newUserEmail, setNewUserEmail] = useState('');
+    const [newUserRole, setNewUserRole] = useState('PRO_MARKETING_TEAM');
+    const [newUserDept, setNewUserDept] = useState('PR & Corporate Outreach');
 
-    // Centres of Excellence (8 CoEs)
-    const coeList = [
-        {
-            id: 'CARDIOLOGY',
-            name: 'Cardiology & Cardiothoracic Surgery',
-            tagline: 'Cath Labs, TAVI, Minimal Invasive Bypass & Robotic Heart Surgery',
-            icon: '❤️',
-            img: 'https://images.unsplash.com/photo-1628348068343-c6a848d2b6dd?auto=format&fit=crop&w=800&q=80',
-            desc: '5-second rapid cardiac CT scanning, 24x7 Primary Angioplasty (Door-to-Balloon <40 mins), and Electrophysiology.',
-            doctorsCount: 16,
-            bedsCount: 48,
-            lead: 'Dr. Ashish Patel (Chief Interventional Cardiologist)'
-        },
-        {
-            id: 'ONCOLOGY',
-            name: 'Medicover Cancer Institute (MCI)',
-            tagline: 'Surgical, Medical, Hemato-Oncology & TrueBeam Radiotherapy',
-            icon: '🎗️',
-            img: 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=800&q=80',
-            desc: 'Multi-disciplinary Tumor Board, Da Vinci Xi robotic resections, Bone Marrow Transplants, and Immunotherapy.',
-            doctorsCount: 22,
-            bedsCount: 65,
-            lead: 'Dr. Meera Nambiar (Director Surgical Oncology)'
-        },
-        {
-            id: 'ORTHOPAEDICS',
-            name: 'Orthopaedics & Robotic Joint Surgery',
-            tagline: 'Mako Robotic Knee & Hip Arthroplasty Centre',
-            icon: '🦴',
-            img: 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=800&q=80',
-            desc: 'Sub-millimeter 3D robotic precision joint replacements, Complex Spine Trauma, and Sports Arthroscopy.',
-            doctorsCount: 14,
-            bedsCount: 40,
-            lead: 'Dr. Sunita Bansal (Director Orthopaedics)'
-        },
-        {
-            id: 'NEUROSCIENCES',
-            name: 'Neurology & Neurosurgery',
-            tagline: 'Comprehensive Stroke Fast-Track & Endoscopic Brain Surgery',
-            icon: '🧠',
-            img: 'https://images.unsplash.com/photo-1559757175-5700dde675bc?auto=format&fit=crop&w=800&q=80',
-            desc: 'Deep Brain Stimulation (DBS) for Parkinson\'s, Micro-neurosurgery for Aneurysms, and 24x7 Neuro-ICU.',
-            doctorsCount: 12,
-            bedsCount: 32,
-            lead: 'Dr. K. Srinivas (Senior Neurosurgeon)'
-        },
-        {
-            id: 'GASTRO',
-            name: 'Medical & Surgical Gastroenterology',
-            tagline: 'Advanced Endoscopy, ERCP & GI Oncology',
-            icon: '🔬',
-            img: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=800&q=80',
-            desc: 'SpyGlass Cholangioscopy, Endoscopic Ultrasound (EUS), Bariatric Weight Loss, and Colorectal Surgery.',
-            doctorsCount: 10,
-            bedsCount: 28,
-            lead: 'Dr. Ramesh Chandra (Chief Gastroenterologist)'
-        },
-        {
-            id: 'TRANSPLANT',
-            name: 'Nephrology, Urology & Organ Transplants',
-            tagline: 'Living Donor Liver, Renal & Pancreas Transplants',
-            icon: '🫁',
-            img: 'https://images.unsplash.com/photo-1551601651-2a8555f1a136?auto=format&fit=crop&w=800&q=80',
-            desc: 'Dedicated positive-pressure sterile transplant suites with 98.6% long-term graft survival record.',
-            doctorsCount: 15,
-            bedsCount: 26,
-            lead: 'Dr. Vikramaditya Roy (Chief Transplant Surgeon)'
-        },
-        {
-            id: 'WOMAN_CHILD',
-            name: 'Woman & Child Speciality Hospital',
-            tagline: 'Level-3 Advanced NICU, Fetal Medicine & Painless Birthing',
-            icon: '👶',
-            img: 'https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=800&q=80',
-            desc: '24x7 In-house Neonatal Resuscitation teams, Pediatric Cardiology, IVF & High-Risk Obstetrics.',
-            doctorsCount: 18,
-            bedsCount: 50,
-            lead: 'Dr. Rohit Agnihotri (Chief Pediatric Intensivist)'
-        },
-        {
-            id: 'PULMONOLOGY',
-            name: 'Pulmonology, Sleep & Critical Care',
-            tagline: 'Advanced Bronchoscopy, EBUS & ECMO Support Unit',
-            icon: '🫁',
-            img: 'https://images.unsplash.com/photo-1530497610245-94d3c16cda28?auto=format&fit=crop&w=800&q=80',
-            desc: 'Specialized ILD Clinic, Cryobiopsy, Sleep Apnea Diagnostics, and Advanced ARDS ECMO Care.',
-            doctorsCount: 9,
-            bedsCount: 24,
-            lead: 'Dr. Ananya Ray (Head Pulmonology)'
-        }
-    ];
+    // 2. CAPACITY & ASSETS ENGINE (200 Beds Total, 5 OTs, 3 Ambulances)
+    // 12 NICU, 8 ICU, 30 Deluxe, 50 Twin, 100 General
+    const [beds, setBeds] = useState(() => {
+        const generatedBeds = [];
+        // 12 NICU
+        for (let i = 1; i <= 12; i++) generatedBeds.push({ id: `NICU-${i}`, type: 'NICU', floor: 2, status: i <= 7 ? 'OCCUPIED' : 'AVAILABLE', patient: i <= 7 ? `Neonate #${100 + i}` : null, tariff: '₹9,500/day' });
+        // 8 ICU
+        for (let i = 1; i <= 8; i++) generatedBeds.push({ id: `ICU-BAY-${i}`, type: 'ICU', floor: 1, status: i <= 5 ? 'OCCUPIED' : 'AVAILABLE', patient: i <= 5 ? `Critical Patient #${200 + i}` : null, tariff: '₹14,000/day' });
+        // 30 Single Deluxe
+        for (let i = 1; i <= 30; i++) generatedBeds.push({ id: `DLX-${300 + i}`, type: 'DELUXE', floor: 3, status: i <= 18 ? 'OCCUPIED' : 'AVAILABLE', patient: i <= 18 ? `Deluxe Patient #${300 + i}` : null, tariff: '₹8,000/day' });
+        // 50 Twin Sharing
+        for (let i = 1; i <= 50; i++) generatedBeds.push({ id: `TWIN-${400 + i}`, type: 'TWIN_SHARING', floor: 4, status: i <= 35 ? 'OCCUPIED' : 'AVAILABLE', patient: i <= 35 ? `Inpatient #${400 + i}` : null, tariff: '₹4,500/day' });
+        // 100 General Ward
+        for (let i = 1; i <= 100; i++) generatedBeds.push({ id: `GEN-${500 + i}`, type: 'GENERAL', floor: 5, status: i <= 60 ? 'OCCUPIED' : 'AVAILABLE', patient: i <= 60 ? `General Patient #${500 + i}` : null, tariff: '₹2,000/day' });
+        return generatedBeds;
+    });
 
-    // Doctor Directory
-    const [doctors] = useState([
+    const [theatres, setTheatres] = useState([
+        { code: 'OT-1', name: 'Da Vinci Robotic Surgical Suite 1', spec: 'Robotic Oncology & Urology', status: 'IDLE', surgeon: 'Dr. Meera Nambiar', procedure: 'Standby for Robotic Prostatectomy' },
+        { code: 'OT-2', name: 'Hybrid Cardiovascular Cath/OT 2', spec: 'Cardiac CTVS & Vascular', status: 'SURGERY_IN_PROGRESS', surgeon: 'Dr. Ashish Patel', procedure: 'Emergency Off-Pump CABG' },
+        { code: 'OT-3', name: 'Mako Robotic Joint Suite 3', spec: 'Joint Replacements & Trauma', status: 'IDLE', surgeon: 'Dr. Sunita Bansal', procedure: 'Scheduled Mako Bilateral Knee' },
+        { code: 'OT-4', name: 'Neuro & Micro-Spine OT 4', spec: 'Brain Neurosurgery', status: 'IDLE', surgeon: 'Dr. K. Srinivas', procedure: 'Standby for Aneurysm Clipping' },
+        { code: 'OT-5', name: 'Emergency Laparoscopy OT 5', spec: 'General Trauma & Transplants', status: 'STERILIZATION', surgeon: 'On-Call Surgeon', procedure: 'Post-Op UV Sterilization' }
+    ]);
+
+    const [ambulances, setAmbulances] = useState([
+        { number: 'TS 09 UA 1001', type: 'Advanced Life Support (ALS)', driver: 'Ramesh Yadav (+91 98490 55001)', status: 'STANDBY', location: 'Central Trauma Bay Base', paramedic: 'Paramedic Sunita K.' },
+        { number: 'TS 09 UA 1002', type: 'Advanced Life Support (ALS)', driver: 'Mahesh Goud (+91 98490 55002)', status: 'DISPATCHED_IN_TRANSIT', location: 'Gachibowli Junction (ETA 5m)', paramedic: 'Paramedic John Paul' },
+        { number: 'TS 09 UA 1003', type: 'Advanced Life Support (ALS)', driver: 'K. Srinivas (+91 98490 55003)', status: 'STANDBY', location: 'Trauma Bay Standby', paramedic: 'Paramedic Farhan A.' }
+    ]);
+
+    // 3. DOCTORS & PATIENT SLOT ALLOCATION (RESTRICTED TO ADMIN/FOUNDER/MANAGEMENT)
+    const [doctors, setDoctors] = useState([
         {
-            id: 'doc-1',
+            id: 'd1',
             name: 'Dr. Ashish Patel',
-            coe: 'CARDIOLOGY',
-            coeName: 'Cardiology & CTVS',
-            role: 'Principal Director - Interventional Cardiology',
-            exp: '22+ Years Experience',
-            qual: 'MBBS, MD, DM (Cardiology), FACC (USA), FSCAI',
-            fee: '₹1,800',
-            rating: '4.98',
-            reviews: '920+ Reviews',
-            opd: 'Mon - Sat: 09:00 AM - 02:00 PM',
-            avatar: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=300&q=80'
+            dept: 'Cardiology & CTVS',
+            slots: [
+                { id: 's1', time: '09:00 AM - 09:30 AM', patient: 'Kishore Varma (UHID: 9812)', status: 'CONFIRMED' },
+                { id: 's2', time: '09:30 AM - 10:00 AM', patient: 'Lalitha Devi (UHID: 9813)', status: 'CONFIRMED' },
+                { id: 's3', time: '10:00 AM - 10:30 AM', patient: null, status: 'AVAILABLE' },
+                { id: 's4', time: '10:30 AM - 11:00 AM', patient: null, status: 'AVAILABLE' }
+            ]
         },
         {
-            id: 'doc-2',
+            id: 'd2',
             name: 'Dr. Meera Nambiar',
-            coe: 'ONCOLOGY',
-            coeName: 'Cancer Care Institute',
-            role: 'Director - Surgical Oncology & Da Vinci Robotic Surgery',
-            exp: '19+ Years Experience',
-            qual: 'MS, MCh (Surgical Oncology), Robotic Fellow (UK)',
-            fee: '₹2,000',
-            rating: '4.96',
-            reviews: '740+ Reviews',
-            opd: 'Mon - Fri: 11:00 AM - 04:00 PM',
-            avatar: 'https://images.unsplash.com/photo-1594824813627-7756f7ef0585?auto=format&fit=crop&w=300&q=80'
+            dept: 'Surgical Oncology',
+            slots: [
+                { id: 's5', time: '11:00 AM - 11:30 AM', patient: 'Sunil Rao (UHID: 8810)', status: 'CONFIRMED' },
+                { id: 's6', time: '11:30 AM - 12:00 PM', patient: null, status: 'AVAILABLE' }
+            ]
         },
         {
-            id: 'doc-3',
+            id: 'd3',
             name: 'Dr. Sunita Bansal',
-            coe: 'ORTHOPAEDICS',
-            coeName: 'Robotic Orthopaedics',
-            role: 'Chief Director - Mako Robotic Joint Replacement & Sports Injury',
-            exp: '18+ Years Experience',
-            qual: 'MS (Ortho), DNB, Fellowship in Joint Arthroplasty (Germany)',
-            fee: '₹1,500',
-            rating: '4.92',
-            reviews: '610+ Reviews',
-            opd: 'Mon - Fri: 09:30 AM - 03:30 PM',
-            avatar: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=300&q=80'
-        },
-        {
-            id: 'doc-4',
-            name: 'Dr. K. Srinivas',
-            coe: 'NEUROSCIENCES',
-            coeName: 'Neurology & Neurosurgery',
-            role: 'Senior Consultant - Brain, Spine & Micro-Neurosurgery',
-            exp: '17+ Years Experience',
-            qual: 'MBBS, MS, MCh (Neurosurgery), FINR (Zurich)',
-            fee: '₹1,600',
-            rating: '4.94',
-            reviews: '530+ Reviews',
-            opd: 'Mon - Sat: 10:00 AM - 03:00 PM',
-            avatar: 'https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&w=300&q=80'
-        },
-        {
-            id: 'doc-5',
-            name: 'Dr. Vikramaditya Roy',
-            coe: 'TRANSPLANT',
-            coeName: 'Organ Transplants',
-            role: 'Chief Transplant Surgeon - Hepato-Pancreato-Biliary',
-            exp: '24+ Years Experience',
-            qual: 'MS, FRCS (Edin), ASTS Multi-Organ Transplant Fellow (USA)',
-            fee: '₹2,500',
-            rating: '4.99',
-            reviews: '1,100+ Reviews',
-            opd: 'Tue, Thu, Sat: 02:00 PM - 06:00 PM',
-            avatar: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&w=300&q=80'
-        },
-        {
-            id: 'doc-6',
-            name: 'Dr. Rohit Agnihotri',
-            coe: 'WOMAN_CHILD',
-            coeName: 'Woman & Child Care',
-            role: 'Head - Neonatology & Level-3 Pediatric Critical Care',
-            exp: '15+ Years Experience',
-            qual: 'MD (Pediatrics), Fellowship in Neonatal Intensive Care (Sydney)',
-            fee: '₹1,400',
-            rating: '4.95',
-            reviews: '810+ Reviews',
-            opd: 'Mon - Sat: 08:30 AM - 01:00 PM',
-            avatar: 'https://images.unsplash.com/photo-1622902046580-2b47f47f5471?auto=format&fit=crop&w=300&q=80'
+            dept: 'Robotic Orthopaedics',
+            slots: [
+                { id: 's7', time: '09:30 AM - 10:00 AM', patient: 'Rajesh Varma (UHID: 7721)', status: 'CONFIRMED' },
+                { id: 's8', time: '10:00 AM - 10:30 AM', patient: null, status: 'AVAILABLE' }
+            ]
         }
     ]);
 
-    // Preventive Health Packages
-    const [packages] = useState([
-        {
-            id: 'PKG-1',
-            name: 'Master Health Checkup (Male / Female)',
-            target: 'All Adults (25+ Years)',
-            price: '₹3,999',
-            original: '₹10,500',
-            testsCount: '68 Parameters',
-            includes: ['Complete Hemogram with ESR', 'Lipid Profile (Cholesterol, HDL, LDL, Triglycerides)', 'Liver Function Tests (SGOT, SGPT, Bilirubin)', 'Renal Function (Urea, Creatinine, Uric Acid)', 'Fasting Blood Sugar & HbA1c', 'ECG (12-Lead Cardiac Trace)', 'Chest X-Ray & Ultrasound Abdomen Pelvis', 'Senior Physician Consultation']
-        },
-        {
-            id: 'PKG-2',
-            name: 'Executive Heart & Stroke Screening Package',
-            target: 'Corporate Executives & High Risk',
-            price: '₹7,499',
-            original: '₹18,500',
-            testsCount: '84 Parameters',
-            includes: ['5-Second CT Coronary Calcium Score', '2D Echocardiography & Color Doppler', 'Treadmill Stress Test (TMT)', 'Carotid Doppler for Stroke Screening', 'High-Sensitivity Troponin & hs-CRP', 'Lipoprotein (a) & Homocysteine Level', 'Thyroid Profile (T3, T4, TSH)', 'Consultation with Senior Interventional Cardiologist']
-        },
-        {
-            id: 'PKG-3',
-            name: 'Comprehensive Cancer Screening (Women)',
-            target: 'Women (30+ Years)',
-            price: '₹4,999',
-            original: '₹14,000',
-            testsCount: '52 Parameters',
-            includes: ['Digital Mammography (Bilateral Breast Scan)', 'Liquid-Based Pap Smear (Cervical Screening)', 'CA-125 Ovarian Tumor Marker', 'Ultrasound Pelvis', 'Stool for Occult Blood', 'Complete Blood Count & Liver Profile', 'Clinical Exam by Senior Gynecologist']
-        },
-        {
-            id: 'PKG-4',
-            name: 'Senior Citizen Complete Wellness Package',
-            target: 'Geriatric Wellness (60+ Years)',
-            price: '₹4,499',
-            original: '₹12,000',
-            testsCount: '72 Parameters',
-            includes: ['DEXA Bone Mineral Density Scan', 'Serum Calcium & Vitamin D3 Total', 'Serum Vitamin B12 & Electrolytes', 'Prostate Specific Antigen (PSA - Men)', 'Kidney Function & Microalbuminuria', 'Diabetic Retinopathy Eye Screening', 'Geriatric Physician Consultation']
-        }
+    // 4. ZOHO-STYLE PATIENT CRM PIPELINE
+    const [crmLeads, setCrmLeads] = useState([
+        { id: 'CRM-101', name: 'Venkat Subba Rao', phone: '+91 98490 88771', source: 'Website Inquiry', spec: 'Robotic Knee Replacement', deal: '₹2,20,000', stage: 'INSURANCE_PREAUTH', rep: 'Anjali Roy (PRO)', notes: 'Star Health cashless pre-auth filed.' },
+        { id: 'CRM-102', name: 'Harika Dev', phone: '+91 98490 88772', source: 'Doctor Referral', spec: 'Cardiac TAVI Procedure', deal: '₹4,50,000', stage: 'CLINICAL_EVAL', rep: 'Karthik Sen (Marketing)', notes: 'CT scan received. Scheduled evaluation.' },
+        { id: 'CRM-103', name: 'Ramesh Varma', phone: '+91 98490 88773', source: 'Corporate Tie-Up (TCS)', spec: 'Executive Master Checkup', deal: '₹15,000', stage: 'CONVERTED', rep: 'Priya Menon (Corporate)', notes: 'Fasting appointment booked for Wednesday.' },
+        { id: 'CRM-104', name: 'K. Srinivasa Murthy', phone: '+91 98490 88774', source: 'Health Camp Vizag', spec: 'Deep Brain Stimulation (DBS)', deal: '₹6,80,000', stage: 'PROPOSAL_SENT', rep: 'Anjali Roy (PRO)', notes: 'Financial counseling done. Awaiting family consent.' }
     ]);
 
-    // Surgical Procedures Cost Guide
-    const [procedures] = useState([
-        { id: 'PROC-1', name: 'Mako Robotic Total Knee Replacement', coe: 'Robotic Orthopaedics', stay: '3 Days Inpatient', estCost: '₹1,95,000 - ₹2,40,000', tpa: '100% Covered under Cashless Insurance', includes: 'Implants, Robotic Console, OT Charges, Surgeon Fee & Physiotherapy' },
-        { id: 'PROC-2', name: 'Coronary Angioplasty with DES Stent', coe: 'Cardiac Sciences', stay: '2 Days Inpatient', estCost: '₹1,45,000 - ₹1,85,000', tpa: 'Covered under CGHS, ECHS & All TPAs', includes: 'FDA-Approved DES Stents, Cath Lab Consumables, ICU Stay' },
-        { id: 'PROC-3', name: 'Da Vinci Robotic Laparoscopic Hysterectomy', coe: 'Woman & Child Care', stay: '2 Days Inpatient', estCost: '₹1,60,000 - ₹2,10,000', tpa: 'Instant Pre-Auth Cashless Approval', includes: '4th Gen Da Vinci Consumables, Single Deluxe Room, Post-Op Care' },
-        { id: 'PROC-4', name: 'Living Donor Renal (Kidney) Transplant', coe: 'Organ Transplants', stay: '7-10 Days Inpatient', estCost: '₹6,50,000 - ₹8,50,000', tpa: 'Multi-Payer / Government Scheme Eligible', includes: 'Donor & Recipient Surgery, Sterile ICU Suite, Immuno-Suppression' }
-    ]);
+    // New Lead Form State
+    const [leadName, setLeadName] = useState('');
+    const [leadPhone, setLeadPhone] = useState('');
+    const [leadSpec, setLeadSpec] = useState('Robotic Joint Replacement');
+    const [leadValue, setLeadValue] = useState('₹2,00,000');
+    const [leadSource, setLeadSource] = useState('Website');
 
-    // Emergency Cases
-    const [emergencyCases, setEmergencyCases] = useState([
-        { id: 'EM-901', patient: 'Kishore Varma (62y/M)', code: 'CODE_RED', condition: 'Acute Anterior STEMI - Door-to-Balloon (38 mins)', bp: '82/54', spo2: '86%', bay: 'Cath Lab Resus 1', doctor: 'Dr. Ashish Patel', status: 'ANGIOPLASTY_READY' },
-        { id: 'EM-902', patient: 'Sujata Devi (48y/F)', code: 'CODE_STROKE', condition: 'Right MCA Ischemic Stroke (Window: 2.1 hrs)', bp: '175/105', spo2: '96%', bay: 'Neuro Trauma Bay 3', doctor: 'Dr. K. Srinivas', status: 'IV_THROMBOLYSIS' }
-    ]);
+    // Slot Allocation Form State
+    const [slotPatientName, setSlotPatientName] = useState('');
+    const [slotTime, setSlotTime] = useState('10:00 AM - 10:30 AM');
 
-    // Beds Telemetry
-    const [beds, setBeds] = useState([
-        { id: 1, code: 'CCU-BAY-01', type: 'Critical Care Unit', coe: 'CARDIOLOGY', status: 'OCCUPIED', patient: 'Kishore Varma', tariff: '₹12,000/day' },
-        { id: 2, code: 'CCU-BAY-02', type: 'Critical Care Unit', coe: 'CARDIOLOGY', status: 'AVAILABLE', patient: null, tariff: '₹12,000/day' },
-        { id: 3, code: 'BMT-STERILE-1', type: 'Bone Marrow Unit', coe: 'ONCOLOGY', status: 'OCCUPIED', patient: 'Sunil Rao', tariff: '₹18,000/day' },
-        { id: 4, code: 'TX-BAY-ALPHA', type: 'Transplant Sterile Suite', coe: 'TRANSPLANT', status: 'OCCUPIED', patient: 'Ramesh Sen', tariff: '₹22,000/day' },
-        { id: 5, code: 'NICU-ISO-04', type: 'Neonatal ICU Level 3', coe: 'WOMAN_CHILD', status: 'AVAILABLE', patient: null, tariff: '₹9,500/day' },
-        { id: 6, code: 'DLX-SUITE-501', type: 'Presidential Deluxe Suite', coe: 'CARDIOLOGY', status: 'AVAILABLE', patient: null, tariff: '₹15,000/day' }
-    ]);
-
-    // Financial Ledgers
-    const [ledgers] = useState([
-        { code: '1010-CASH', desc: 'OPD Cash & UPI Billing Registry', dr: '₹8,45,000.00', cr: '₹0.00' },
-        { code: '1020-BANK', desc: 'Operating Escrow Account', dr: '₹64,20,000.00', cr: '₹0.00' },
-        { code: '1030-TPA-RECV', desc: 'Insurance / Cashless TPA Claims (Star, HDFC Ergo, ICICI, Medi Assist)', dr: '₹52,80,000.00', cr: '₹0.00' },
-        { code: '2010-IP-ESCROW', desc: 'Inpatient Surgeries Advance Deposits', dr: '₹0.00', cr: '₹34,50,000.00' },
-        { code: '4010-CLINICAL-REV', desc: 'Robotic Surgery & Cath Lab Procedural Revenue', dr: '₹0.00', cr: '₹90,95,000.00' }
-    ]);
-
+    // Authentication
     const handleLogin = (e) => {
         e.preventDefault();
         setErr('');
-        const credMap = {
-            'admin@wecure.hospital': { pass: 'WecureAdmin2026!', name: 'Dr. Sarah Jenkins', role: 'CHIEF_MEDICAL_OFFICER', mods: ['DASHBOARD', 'CENTRES_OF_EXCELLENCE', 'DOCTORS_ROSTER', 'HEALTH_PACKAGES', 'SURGERY_COSTS', 'EMERGENCY_24X7', 'BED_TELEMETRY', 'TPA_FINANCE'] },
-            'cardio@wecure.hospital': { pass: 'WecureCardio2026!', name: 'Dr. Ashish Patel', role: 'DIRECTOR_CARDIOLOGY', mods: ['DASHBOARD', 'CENTRES_OF_EXCELLENCE', 'DOCTORS_ROSTER', 'EMERGENCY_24X7', 'BED_TELEMETRY'] },
-            'emergency@wecure.hospital': { pass: 'WecureEmergency2026!', name: 'Dr. K. Srinivas', role: 'CHIEF_TRAUMA_HEAD', mods: ['DASHBOARD', 'EMERGENCY_24X7', 'BED_TELEMETRY'] },
-            'finance@wecure.hospital': { pass: 'WecureFinance2026!', name: 'Naveen Aggarwal', role: 'CFO_TPA_HEAD', mods: ['DASHBOARD', 'SURGERY_COSTS', 'TPA_FINANCE'] }
-        };
-
-        const found = credMap[email.trim().toLowerCase()];
-        if (found && found.pass === password) {
+        const found = usersList.find(u => u.email.toLowerCase() === email.trim().toLowerCase() && u.pass === password);
+        if (found) {
             setUser(found);
-            setActiveTab(found.mods[0]);
+            // Route to proper tab
+            if (found.permissions.executive) setActiveTab('EXECUTIVE_ADMIN_DASHBOARD');
+            else if (found.permissions.crm) setActiveTab('ZOHO_CRM');
+            else setActiveTab('BEDS_AND_CAPACITY');
         } else {
-            setErr('Invalid workstation credential.');
+            setErr('Invalid credentials. Check email & passphrase.');
         }
     };
 
-    const toggleBedStatus = (id) => {
-        const cycle = ['AVAILABLE', 'OCCUPIED', 'CLEANING', 'DIRTY'];
-        setBeds(beds.map(b => b.id === id ? { ...b, status: cycle[(cycle.indexOf(b.status) + 1) % cycle.length] } : b));
+    // User Management Action: Add User
+    const handleAddUser = (e) => {
+        e.preventDefault();
+        const rolePermissionsMap = {
+            'FOUNDER_CEO': { executive: true, docBookingAdmin: true, crm: true, userMgmt: true, assets: true, otAmbulance: true, triage: true },
+            'HOSPITAL_ADMIN': { executive: true, docBookingAdmin: true, crm: true, userMgmt: true, assets: true, otAmbulance: true, triage: true },
+            'EXECUTIVE_MANAGEMENT': { executive: true, docBookingAdmin: true, crm: true, userMgmt: false, assets: true, otAmbulance: true, triage: false },
+            'PRO_MARKETING_TEAM': { executive: false, docBookingAdmin: false, crm: true, userMgmt: false, assets: false, otAmbulance: false, triage: false },
+            'CRM_MANAGER': { executive: false, docBookingAdmin: false, crm: true, userMgmt: false, assets: false, otAmbulance: false, triage: false },
+            'DOCTOR_CONSULTANT': { executive: false, docBookingAdmin: false, crm: false, userMgmt: false, assets: false, otAmbulance: true, triage: true },
+            'NURSING_DUTY': { executive: false, docBookingAdmin: false, crm: false, userMgmt: false, assets: true, otAmbulance: true, triage: true }
+        };
+
+        const newUser = {
+            id: `u${usersList.length + 1}`,
+            name: newUserName,
+            email: newUserEmail,
+            pass: 'WecureStaff2026!',
+            role: newUserRole,
+            dept: newUserDept,
+            status: 'ACTIVE',
+            permissions: rolePermissionsMap[newUserRole]
+        };
+
+        setUsersList([...usersList, newUser]);
+        setShowUserModal(false);
+        setNewUserName('');
+        setNewUserEmail('');
+        alert(`Employee account created for ${newUserName} with Role: ${newUserRole}`);
     };
 
-    const handleBooking = (e) => {
-        e.preventDefault();
-        const tokenNum = Math.floor(10 + Math.random() * 90);
-        const newMsg = {
-            id: Date.now(),
-            channel: channelPref,
-            to: patientPhone || '+91 98490 12345',
-            text: `Confirmed Token #${tokenNum} for ${patientName} with ${selectedDoc.name} on ${appointmentDate}. Payer: ${payerType}.`,
-            time: 'Just now'
-        };
-        setCommsFeed([newMsg, ...commsFeed]);
-        alert(`OPD Consultation Token #${tokenNum} issued for ${patientName} with ${selectedDoc.name}! Instant confirmation dispatched via ${channelPref}.`);
-        setShowBookingModal(false);
-        setPatientName('');
-        setPatientPhone('');
+    // Toggle User Feature Flag dynamically
+    const toggleUserPermission = (userId, permKey) => {
+        if (!user.permissions.userMgmt) return;
+        setUsersList(usersList.map(u => {
+            if (u.id === userId) {
+                return {
+                    ...u,
+                    permissions: {
+                        ...u.permissions,
+                        [permKey]: !u.permissions[permKey]
+                    }
+                };
+            }
+            return u;
+        }));
     };
 
-    const handleEmergency = (e) => {
+    // Allocate Patient to Doctor Slot
+    const handleAllocateSlot = (e) => {
         e.preventDefault();
-        const newCase = {
-            id: `EM-${Math.floor(900 + Math.random() * 100)}`,
-            patient: emPatient || 'Unidentified Emergency Patient',
-            code: emCode,
-            condition: emCode === 'CODE_RED' ? 'Acute Cardiac Arrest / Severe Polytrauma' : 'Acute Neurovascular Stroke Event',
-            bp: emBP,
-            spo2: emSpo2,
-            bay: 'Trauma Resus Bay Alpha',
-            doctor: 'On-Duty Chief Trauma Resuscitator',
-            status: 'RESUSCITATION_ACTIVE'
+        if (!selectedDocForSlot) return;
+        setDoctors(doctors.map(d => {
+            if (d.id === selectedDocForSlot.id) {
+                return {
+                    ...d,
+                    slots: d.slots.map(s => s.time === slotTime ? { ...s, patient: slotPatientName, status: 'CONFIRMED' } : s)
+                };
+            }
+            return d;
+        }));
+        setShowSlotModal(false);
+        setSlotPatientName('');
+        alert(`Patient ${slotPatientName} allocated to ${selectedDocForSlot.name} at ${slotTime}`);
+    };
+
+    // Add Lead to CRM
+    const handleAddLead = (e) => {
+        e.preventDefault();
+        const newLead = {
+            id: `CRM-${Math.floor(100 + Math.random() * 900)}`,
+            name: leadName,
+            phone: leadPhone,
+            source: leadSource,
+            spec: leadSpec,
+            deal: leadValue,
+            stage: 'NEW_INQUIRY',
+            rep: user.name,
+            notes: 'Initial inquiry intake registered in CRM.'
         };
-        setEmergencyCases([newCase, ...emergencyCases]);
+        setCrmLeads([newLead, ...crmLeads]);
+        setShowLeadModal(false);
+        setLeadName('');
+        setLeadPhone('');
+    };
 
-        // Add AI Log & Comms
-        setAiLogs([
-            { id: Date.now(), agent: 'Autonomous Triage Agent (AETA)', text: `🚨 ${emCode} Analysis: SpO2 ${emSpo2} indicates critical hypoxemia. CCU-01 reserved with Mechanical Ventilator. WhatsApp trauma alert sent to on-duty surgeon.`, time: 'Just now', type: 'CRITICAL' },
-            ...aiLogs
-        ]);
-        setCommsFeed([
-            { id: Date.now() + 1, channel: 'WHATSAPP', to: '+91 98490 12345 (Trauma Registry)', text: `🚨 ${emCode} Alert: ${newCase.patient}. BP ${emBP} | SpO2 ${emSpo2}. Bay: Alpha.`, time: 'Just now' },
-            ...commsFeed
-        ]);
-
-        setShowEmergencyModal(false);
-        setEmPatient('');
+    // Update CRM Lead Stage
+    const updateLeadStage = (leadId, newStage) => {
+        setCrmLeads(crmLeads.map(l => l.id === leadId ? { ...l, stage: newStage } : l));
     };
 
     if (!user) {
         return (
-            <div className="min-h-screen bg-brand-dark flex flex-col items-center justify-center p-4 relative overflow-hidden">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-brand-cyan/20 via-brand-dark to-[#000E19]"></div>
-                
-                <div className="relative w-full max-w-md bg-white p-8 rounded-3xl shadow-2xl border border-slate-100">
+            <div className="min-h-screen bg-[#001A2C] flex flex-col items-center justify-center p-4 relative font-sans">
+                <div className="w-full max-w-md bg-white p-8 rounded-3xl shadow-2xl border border-slate-100">
                     <div className="text-center mb-6">
-                        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-brand-cyan text-white font-black text-2xl mb-3 shadow-lg shadow-brand-cyan/30">
-                            W
-                        </div>
-                        <h2 className="text-2xl font-black text-brand-navy tracking-tight">Wecure Super Speciality</h2>
-                        <p className="text-xs text-brand-cyan font-bold uppercase tracking-widest mt-1">European Standard Clinical Care</p>
+                        <div className="w-12 h-12 rounded-2xl bg-[#00A3E0] text-white font-black text-xl mx-auto flex items-center justify-center mb-2 shadow-lg shadow-cyan-500/20">W</div>
+                        <h2 className="text-2xl font-black text-[#002B49] tracking-tight">Wecure Enterprise ERP</h2>
+                        <p className="text-xs text-[#00A3E0] font-bold uppercase tracking-wider mt-1">Multi-Role Security & Governance</p>
                     </div>
 
-                    {err && <div className="mb-4 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold p-3 rounded-xl text-center">{err}</div>}
+                    {err && <div className="p-3 mb-4 bg-rose-50 text-rose-600 text-xs rounded-xl font-bold text-center border border-rose-200">{err}</div>}
 
                     <form onSubmit={handleLogin} className="space-y-4">
                         <div>
-                            <label className="block text-[11px] font-black text-slate-600 uppercase tracking-wider mb-1">Workstation User ID</label>
-                            <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-brand-cyan focus:outline-none" />
+                            <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1">Corporate / Clinical Email</label>
+                            <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="w-full p-3 border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-[#00A3E0] focus:outline-none" />
                         </div>
                         <div>
-                            <label className="block text-[11px] font-black text-slate-600 uppercase tracking-wider mb-1">Passphrase</label>
-                            <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-brand-cyan focus:outline-none" />
+                            <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1">Secure Passphrase</label>
+                            <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="w-full p-3 border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-[#00A3E0] focus:outline-none" />
                         </div>
-                        <button type="submit" className="w-full py-3.5 bg-brand-cyan hover:bg-brand-cyanHover text-white font-bold text-sm rounded-xl shadow-lg shadow-brand-cyan/30 transition">
-                            Authenticate Healthcare Session
+                        <button type="submit" className="w-full py-3.5 bg-[#00A3E0] hover:bg-[#008AC0] text-white font-black text-xs rounded-xl shadow-lg transition">
+                            Authenticate Enterprise Session
                         </button>
                     </form>
 
-                    <div className="mt-6 pt-4 border-t border-slate-100 flex justify-between text-[11px] text-slate-400 font-medium">
-                        <span>NABH • JCI Accredited</span>
-                        <span>24x7 Emergency Ready</span>
+                    <div className="mt-6 pt-4 border-t border-slate-100 space-y-1 text-[11px] text-slate-500">
+                        <p className="font-bold text-slate-700">Demo Role Credentials:</p>
+                        <p>👑 <strong>Founder/CEO:</strong> <code>founder@wecure.hospital</code></p>
+                        <p>🏥 <strong>Hospital Admin:</strong> <code>admin@wecure.hospital</code></p>
+                        <p>📊 <strong>PRO / Marketing (CRM Only):</strong> <code>pro@wecure.hospital</code></p>
+                        <p>👨‍⚕️ <strong>Doctor:</strong> <code>cardio@wecure.hospital</code></p>
+                        <p className="text-[10px] text-slate-400 mt-2">All Passwords: <code>WecureFounder2026!</code> / <code>WecureAdmin2026!</code> / <code>WecurePro2026!</code></p>
                     </div>
                 </div>
             </div>
         );
     }
 
-    const currentLoc = locations.find(l => l.id === selectedLocation) || locations[0];
-    const filteredDocs = doctors.filter(d => {
-        const matchCoE = selectedCoE === 'ALL' || d.coe === selectedCoE;
-        const matchSearch = d.name.toLowerCase().includes(searchQuery.toLowerCase()) || d.role.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchCoE && matchSearch;
-    });
+    const filteredBeds = bedFilter === 'ALL' ? beds : beds.filter(b => b.type === bedFilter);
+    const filteredLeads = crmStageFilter === 'ALL' ? crmLeads : crmLeads.filter(l => l.stage === crmStageFilter);
 
     return (
-        <div className="min-h-screen bg-[#F4F7F9] text-brand-dark flex flex-col font-sans">
+        <div className="min-h-screen bg-[#F4F7F9] text-[#001A2C] flex flex-col font-sans">
             
-            {/* 1. TOP UTILITY STRIP */}
-            <div className="bg-brand-navy text-white px-8 py-2 text-xs flex flex-col md:flex-row justify-between items-center border-b border-white/10 gap-2">
-                <div className="flex items-center space-x-4 text-[11px] flex-wrap">
-                    <span className="flex items-center font-black text-brand-rose">
-                        <span className="w-2.5 h-2.5 rounded-full bg-brand-rose animate-ping mr-2"></span>
-                        24x7 Emergency Hotline: {currentLoc.emergency}
-                    </span>
-                    <span className="hidden lg:inline text-slate-400">|</span>
-                    <span className="hidden lg:inline text-slate-300">European Clinical Standard • 26+ Multi-Speciality Network</span>
+            {/* 1. TOP RBAC SECURITY BAR */}
+            <div className="bg-[#002B49] text-white px-8 py-2.5 text-xs flex justify-between items-center border-b border-white/10">
+                <div className="flex items-center space-x-4 text-[11px]">
+                    <span className="font-black text-[#00A3E0]">WECURE HEALTHCARE SYSTEM</span>
+                    <span className="text-slate-400">|</span>
+                    <span className="text-slate-200 font-bold">200 Beds • 12 NICU • 8 ICU • 5 Modular OTs • 3 ALS Ambulances</span>
                 </div>
-
                 <div className="flex items-center space-x-3 text-[11px]">
-                    {/* HUB SELECTOR */}
-                    <div className="flex items-center space-x-1.5 bg-white/10 px-2.5 py-1 rounded-lg border border-white/10">
-                        <span className="text-slate-300">📍 Hub:</span>
-                        <select
-                            value={selectedLocation}
-                            onChange={e => setSelectedLocation(e.target.value)}
-                            className="bg-transparent text-white font-bold focus:outline-none cursor-pointer"
-                        >
-                            {locations.map(loc => (
-                                <option key={loc.id} value={loc.id} className="text-brand-dark">
-                                    {loc.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <button onClick={() => setShowEmergencyModal(true)} className="px-3 py-1 bg-brand-rose hover:bg-rose-700 text-white font-black rounded-lg uppercase tracking-wider shadow">
-                        🚨 Code Red
-                    </button>
-                    <button onClick={() => setShowAiDrawer(!showAiDrawer)} className="px-3 py-1 bg-brand-cyan hover:bg-brand-cyanHover text-white font-bold rounded-lg text-[10px]">
-                        🤖 AI & Comms Feed ({aiLogs.length + commsFeed.length})
-                    </button>
-                    <span className="font-bold text-brand-cyan hidden sm:inline">{user.name}</span>
+                    <span className="px-2 py-0.5 rounded bg-white/10 font-bold text-cyan-300 border border-white/10">{user.role.replace(/_/g, ' ')}</span>
+                    <span className="font-black text-white">{user.name}</span>
+                    <button onClick={() => setUser(null)} className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg transition">Sign Out</button>
                 </div>
             </div>
 
-            {/* 2. MAIN BRAND NAVIGATION BAR */}
+            {/* 2. MAIN NAVIGATION */}
             <header className="bg-white border-b border-slate-200 px-8 py-3.5 flex justify-between items-center sticky top-0 z-40 shadow-sm">
                 <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-xl bg-brand-cyan text-white font-black text-xl flex items-center justify-center shadow-md shadow-brand-cyan/20">
-                        W
-                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-[#00A3E0] text-white font-black text-xl flex items-center justify-center shadow-md shadow-cyan-500/20">W</div>
                     <div>
-                        <h1 className="text-lg font-black text-brand-navy tracking-tight leading-tight">WECURE HOSPITALS</h1>
-                        <p className="text-[10px] text-brand-cyan font-bold uppercase tracking-wider">{currentLoc.name} ({currentLoc.beds} Beds)</p>
+                        <h1 className="text-base font-black text-[#002B49] tracking-tight">WECURE SUPER SPECIALITY</h1>
+                        <p className="text-[10px] text-[#00A3E0] font-bold uppercase tracking-wider">{user.dept}</p>
                     </div>
                 </div>
 
-                {/* NAVIGATION TABS */}
-                <div className="hidden xl:flex items-center bg-slate-100 p-1.5 rounded-2xl space-x-1 border border-slate-200">
-                    {[
-                        { id: 'DASHBOARD', label: 'Overview', icon: '⚡' },
-                        { id: 'CENTRES_OF_EXCELLENCE', label: 'Centres of Excellence', icon: '🏛️' },
-                        { id: 'DOCTORS_ROSTER', label: 'Find a Doctor', icon: '👨‍⚕️' },
-                        { id: 'HEALTH_PACKAGES', label: 'Health Packages', icon: '🩺' },
-                        { id: 'SURGERY_COSTS', label: 'Surgery Cost Guide', icon: '💰' },
-                        { id: 'EMERGENCY_24X7', label: '24x7 Emergency', icon: '🚨' },
-                        { id: 'BED_TELEMETRY', label: 'Bed Telemetry', icon: '🛏️' },
-                        { id: 'TPA_FINANCE', label: 'Cashless TPA', icon: '💳' }
-                    ].map(tab => (
+                {/* ROLE-AWARE MODULE TABS */}
+                <div className="flex items-center bg-slate-100 p-1.5 rounded-2xl space-x-1 border border-slate-200 overflow-x-auto text-xs font-bold">
+                    
+                    {/* ONLY FOUNDER / ADMIN / MANAGEMENT */}
+                    {user.permissions.executive && (
                         <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`px-3 py-1.5 text-xs font-bold rounded-xl transition flex items-center space-x-1.5 ${activeTab === tab.id ? 'bg-brand-navy text-white shadow-md' : 'text-slate-600 hover:text-slate-900'}`}
+                            onClick={() => setActiveTab('EXECUTIVE_ADMIN_DASHBOARD')}
+                            className={`px-3 py-1.5 rounded-xl transition flex items-center space-x-1.5 ${activeTab === 'EXECUTIVE_ADMIN_DASHBOARD' ? 'bg-[#002B49] text-white shadow' : 'text-slate-600'}`}
                         >
-                            <span>{tab.icon}</span>
-                            <span>{tab.label}</span>
+                            <span>👑</span>
+                            <span>Executive / Founder Hub</span>
                         </button>
-                    ))}
-                </div>
+                    )}
 
-                <button onClick={() => setUser(null)} className="px-3.5 py-1.5 border border-rose-200 text-rose-600 font-bold text-xs rounded-xl hover:bg-rose-50 transition">
-                    Sign Out
-                </button>
+                    {/* ONLY ADMIN / FOUNDER / MANAGEMENT CAN OPERATE DOCTOR ALLOCATION */}
+                    {user.permissions.docBookingAdmin && (
+                        <button
+                            onClick={() => setActiveTab('DOCTOR_SLOT_ALLOCATION')}
+                            className={`px-3 py-1.5 rounded-xl transition flex items-center space-x-1.5 ${activeTab === 'DOCTOR_SLOT_ALLOCATION' ? 'bg-[#002B49] text-white shadow' : 'text-slate-600'}`}
+                        >
+                            <span>👨‍⚕️</span>
+                            <span>Doctor Slot Allocation</span>
+                        </button>
+                    )}
+
+                    {/* CRM: PRO, MARKETING, MANAGER, ADMIN, FOUNDER */}
+                    {user.permissions.crm && (
+                        <button
+                            onClick={() => setActiveTab('ZOHO_CRM')}
+                            className={`px-3 py-1.5 rounded-xl transition flex items-center space-x-1.5 ${activeTab === 'ZOHO_CRM' ? 'bg-[#002B49] text-white shadow' : 'text-slate-600'}`}
+                        >
+                            <span>💼</span>
+                            <span>Zoho-Style Patient CRM</span>
+                        </button>
+                    )}
+
+                    {/* ASSETS & CAPACITY (BEDS, OTS, AMBULANCES) */}
+                    {(user.permissions.assets || user.permissions.otAmbulance) && (
+                        <button
+                            onClick={() => setActiveTab('BEDS_AND_CAPACITY')}
+                            className={`px-3 py-1.5 rounded-xl transition flex items-center space-x-1.5 ${activeTab === 'BEDS_AND_CAPACITY' ? 'bg-[#002B49] text-white shadow' : 'text-slate-600'}`}
+                        >
+                            <span>🛏️</span>
+                            <span>200 Beds, 5 OTs & Fleet</span>
+                        </button>
+                    )}
+
+                    {/* USER MANAGEMENT & RBAC (ADMIN / FOUNDER ONLY) */}
+                    {user.permissions.userMgmt && (
+                        <button
+                            onClick={() => setActiveTab('USER_MANAGEMENT_RBAC')}
+                            className={`px-3 py-1.5 rounded-xl transition flex items-center space-x-1.5 ${activeTab === 'USER_MANAGEMENT_RBAC' ? 'bg-[#002B49] text-white shadow' : 'text-slate-600'}`}
+                        >
+                            <span>🛡️</span>
+                            <span>User Management & RBAC</span>
+                        </button>
+                    )}
+                </div>
             </header>
 
-            {/* 3. HERO SHOWCASE WITH 4-ACTION QUICK HUB */}
-            <div className="bg-gradient-to-r from-brand-navy via-[#003B64] to-brand-cyan text-white px-8 py-8 shadow-inner relative overflow-hidden">
-                <div className="max-w-7xl mx-auto flex flex-col lg:flex-row justify-between items-start lg:items-center relative z-10 gap-6">
-                    <div>
-                        <span className="px-2.5 py-1 rounded-md text-[10px] font-black bg-white/20 text-cyan-200 uppercase tracking-widest border border-white/20">
-                            Multi-Speciality Quaternary Network
-                        </span>
-                        <h2 className="text-2xl md:text-3xl font-black mt-2 tracking-tight">Advanced European Clinical Care & Robotic Surgery</h2>
-                        <p className="text-xs text-slate-100 mt-1 max-w-2xl leading-relaxed">
-                            Equipped with 4th Gen Da Vinci Robotic Surgery, 5-Second Rapid Cardiac CT Scanners, TrueBeam Radiotherapy, and 24x7 Cath Labs.
-                        </p>
-                    </div>
-
-                    {/* 4-ACTION QUICK TILES */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 w-full lg:w-auto">
-                        <button onClick={() => { setActiveTab('DOCTORS_ROSTER'); setSelectedDoc(doctors[0]); setShowBookingModal(true); }} className="bg-white/10 hover:bg-white/20 p-3 rounded-2xl border border-white/20 backdrop-blur-md text-left transition flex flex-col justify-between">
-                            <span className="text-xl">📅</span>
-                            <span className="text-[11px] font-black mt-2">Book OPD Appointment</span>
-                        </button>
-                        <button onClick={() => setActiveTab('DOCTORS_ROSTER')} className="bg-white/10 hover:bg-white/20 p-3 rounded-2xl border border-white/20 backdrop-blur-md text-left transition flex flex-col justify-between">
-                            <span className="text-xl">👨‍⚕️</span>
-                            <span className="text-[11px] font-black mt-2">Find a Doctor</span>
-                        </button>
-                        <button onClick={() => setActiveTab('HEALTH_PACKAGES')} className="bg-white/10 hover:bg-white/20 p-3 rounded-2xl border border-white/20 backdrop-blur-md text-left transition flex flex-col justify-between">
-                            <span className="text-xl">🩺</span>
-                            <span className="text-[11px] font-black mt-2">Health Packages</span>
-                        </button>
-                        <button onClick={() => setActiveTab('SURGERY_COSTS')} className="bg-white/10 hover:bg-white/20 p-3 rounded-2xl border border-white/20 backdrop-blur-md text-left transition flex flex-col justify-between">
-                            <span className="text-xl">💰</span>
-                            <span className="text-[11px] font-black mt-2">Surgery Cost Estimator</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* 4. MAIN WORKSPACE */}
+            {/* 3. WORKSPACE CONTENT */}
             <main className="max-w-7xl w-full mx-auto p-8 space-y-8 flex-1">
 
-                {/* TAB: DASHBOARD OVERVIEW */}
-                {activeTab === 'DASHBOARD' && (
-                    <div className="space-y-8">
-                        {/* KPI STAT TILES */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                                <p className="text-[11px] font-black uppercase text-slate-400 tracking-wider">Centres of Excellence</p>
-                                <h3 className="text-2xl font-black text-brand-navy mt-1">8 Specialized Institutes</h3>
-                                <p className="text-[11px] text-brand-cyan font-bold mt-2">Robotic OTs & Cath Labs Active</p>
+                {/* MODULE 1: EXECUTIVE & FOUNDER DASHBOARD */}
+                {activeTab === 'EXECUTIVE_ADMIN_DASHBOARD' && user.permissions.executive && (
+                    <div className="space-y-6">
+                        <div className="bg-gradient-to-r from-[#002B49] via-[#05375C] to-[#00A3E0] text-white p-6 rounded-3xl shadow-xl flex justify-between items-center">
+                            <div>
+                                <span className="px-2.5 py-1 bg-white/20 text-cyan-200 text-[10px] font-black rounded-lg uppercase tracking-wider">Restricted Executive Access</span>
+                                <h2 className="text-xl font-black mt-2">Hospital Founder & Management Command Console</h2>
+                                <p className="text-xs text-slate-200 mt-0.5">High-level telemetry across 200 beds, surgeries, financial escrow, and CRM conversions.</p>
                             </div>
-                            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                                <p className="text-[11px] font-black uppercase text-slate-400 tracking-wider">ICU / Bed Occupancy</p>
-                                <h3 className="text-2xl font-black text-amber-600 mt-1">
-                                    {Math.round((beds.filter(b => b.status === 'OCCUPIED').length / beds.length) * 100)}%
-                                </h3>
-                                <p className="text-[11px] text-slate-500 font-medium mt-2">{beds.filter(b => b.status === 'AVAILABLE').length} Critical Care Beds Open</p>
-                            </div>
-                            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                                <p className="text-[11px] font-black uppercase text-slate-400 tracking-wider">Trauma Resuscitation</p>
-                                <h3 className="text-2xl font-black text-brand-rose mt-1">{emergencyCases.length} Active Codes</h3>
-                                <p className="text-[11px] text-rose-500 font-bold mt-2">Door-to-Balloon &lt; 40 mins</p>
-                            </div>
-                            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                                <p className="text-[11px] font-black uppercase text-slate-400 tracking-wider">Cashless TPA Billing</p>
-                                <h3 className="text-2xl font-black text-emerald-600 mt-1">₹90.95 Lakhs</h3>
-                                <p className="text-[11px] text-emerald-600 font-bold mt-2">35+ Insurance Tie-ups Cleared</p>
+                            <div className="text-right">
+                                <p className="text-[10px] text-slate-300 font-bold uppercase">Executive Lead</p>
+                                <p className="text-base font-black text-cyan-200">{user.name}</p>
                             </div>
                         </div>
 
-                        {/* COES SHOWCASE GRID */}
-                        <div>
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-lg font-black text-brand-navy">Centres of Excellence (CoEs)</h3>
-                                <button onClick={() => setActiveTab('CENTRES_OF_EXCELLENCE')} className="text-xs font-bold text-brand-cyan hover:underline">Explore All 8 Institutes →</button>
+                        {/* EXECUTIVE KPI TILES */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                                <p className="text-[10px] font-black uppercase text-slate-400">Total Bed Occupancy</p>
+                                <h3 className="text-2xl font-black text-[#002B49] mt-1">{beds.filter(b => b.status === 'OCCUPIED').length} / 200</h3>
+                                <p className="text-[11px] text-[#00A3E0] font-bold mt-2">{Math.round((beds.filter(b => b.status === 'OCCUPIED').length / 200) * 100)}% Facility Utilization</p>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                {coeList.slice(0, 3).map(coe => (
-                                    <div key={coe.id} className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between">
-                                        <img src={coe.img} alt={coe.name} className="h-44 w-full object-cover" />
-                                        <div className="p-5 flex-1 flex flex-col justify-between">
+                            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                                <p className="text-[10px] font-black uppercase text-slate-400">NICU & ICU Saturation</p>
+                                <h3 className="text-2xl font-black text-rose-600 mt-1">12 / 20 Critical</h3>
+                                <p className="text-[11px] text-slate-500 font-medium mt-2">7 NICU Beds & 5 ICU Beds Occupied</p>
+                            </div>
+                            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                                <p className="text-[10px] font-black uppercase text-slate-400">Active Surgeries (5 OTs)</p>
+                                <h3 className="text-2xl font-black text-amber-600 mt-1">1 In-Progress, 1 Sterilizing</h3>
+                                <p className="text-[11px] text-amber-600 font-bold mt-2">OT-2 Hybrid Cath Engaged</p>
+                            </div>
+                            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                                <p className="text-[10px] font-black uppercase text-slate-400">CRM Deal Pipeline</p>
+                                <h3 className="text-2xl font-black text-emerald-600 mt-1">₹13.65 Lakhs</h3>
+                                <p className="text-[11px] text-emerald-600 font-bold mt-2">{crmLeads.length} High-Ticket Inpatient Inquiries</p>
+                            </div>
+                        </div>
+
+                        {/* OT & FLEET QUICK TELEMETRY */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                                <h3 className="text-sm font-black text-[#002B49] mb-3">Modular Operation Theatre Telemetry (5 Suites)</h3>
+                                <div className="space-y-3">
+                                    {theatres.map(ot => (
+                                        <div key={ot.code} className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex justify-between items-center text-xs">
                                             <div>
-                                                <span className="text-[10px] font-black text-brand-cyan uppercase tracking-wider">{coe.tagline}</span>
-                                                <h4 className="font-black text-brand-navy text-base mt-1">{coe.name}</h4>
-                                                <p className="text-xs text-slate-500 mt-2 leading-relaxed">{coe.desc}</p>
+                                                <p className="font-black text-[#002B49]">{ot.code}: {ot.name}</p>
+                                                <p className="text-slate-500 text-[11px]">{ot.surgeon} • {ot.procedure}</p>
                                             </div>
-                                            <button onClick={() => { setSelectedCoE(coe.id); setActiveTab('DOCTORS_ROSTER'); }} className="mt-4 w-full py-2 bg-slate-100 hover:bg-brand-navy hover:text-white text-brand-navy text-xs font-bold rounded-xl transition">
-                                                Consult Specialists →
-                                            </button>
+                                            <span className={`px-2 py-0.5 rounded font-black text-[10px] ${ot.status === 'IDLE' ? 'bg-emerald-100 text-emerald-800' : ot.status === 'SURGERY_IN_PROGRESS' ? 'bg-rose-100 text-rose-800 animate-pulse' : 'bg-amber-100 text-amber-800'}`}>
+                                                {ot.status.replace(/_/g, ' ')}
+                                            </span>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                                <h3 className="text-sm font-black text-[#002B49] mb-3">Ambulance Fleet Status (3 ALS Units)</h3>
+                                <div className="space-y-3">
+                                    {ambulances.map(amb => (
+                                        <div key={amb.number} className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex justify-between items-center text-xs">
+                                            <div>
+                                                <p className="font-black text-[#002B49]">{amb.number} ({amb.type})</p>
+                                                <p className="text-slate-500 text-[11px]">Driver: {amb.driver} | Location: <strong>{amb.location}</strong></p>
+                                            </div>
+                                            <span className={`px-2 py-0.5 rounded font-black text-[10px] ${amb.status === 'STANDBY' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800 animate-pulse'}`}>
+                                                {amb.status.replace(/_/g, ' ')}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </div>
                 )}
 
-                {/* TAB: CENTRES OF EXCELLENCE */}
-                {activeTab === 'CENTRES_OF_EXCELLENCE' && (
+                {/* MODULE 2: DOCTOR SLOT ALLOCATION (ADMIN/FOUNDER/MANAGEMENT ONLY) */}
+                {activeTab === 'DOCTOR_SLOT_ALLOCATION' && user.permissions.docBookingAdmin && (
                     <div className="space-y-6">
-                        <div>
-                            <h2 className="text-xl font-black text-brand-navy">Centres of Clinical Excellence</h2>
-                            <p className="text-xs text-slate-500 mt-0.5">Specialized surgical & diagnostic institutes built with high-end quaternary technology.</p>
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <h2 className="text-xl font-black text-[#002B49]">Doctor Consultation Slot & Patient Allocation</h2>
+                                <p className="text-xs text-slate-500">Restricted to Hospital Admin, Facilitator, and Founder. Assign patient bookings directly to physician rosters.</p>
+                            </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {coeList.map(coe => (
-                                <div key={coe.id} className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg transition flex flex-col justify-between">
-                                    <img src={coe.img} alt={coe.name} className="h-48 w-full object-cover" />
-                                    <div className="p-6 space-y-4">
-                                        <div>
-                                            <span className="text-[10px] font-black text-brand-cyan uppercase tracking-widest">{coe.tagline}</span>
-                                            <h3 className="text-base font-black text-brand-navy mt-1">{coe.name}</h3>
-                                            <p className="text-xs text-slate-500 mt-2 leading-relaxed">{coe.desc}</p>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {doctors.map(doc => (
+                                <div key={doc.id} className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm flex flex-col justify-between space-y-4">
+                                    <div>
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <h3 className="text-base font-black text-[#002B49]">{doc.name}</h3>
+                                                <p className="text-xs text-[#00A3E0] font-bold">{doc.dept}</p>
+                                            </div>
+                                            <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-black rounded">{doc.slots.length} Slots</span>
                                         </div>
-                                        <div className="pt-3 border-t border-slate-100 space-y-1 text-xs text-slate-600">
-                                            <p><strong>Senior Faculty:</strong> {coe.doctorsCount} Super Specialists</p>
-                                            <p><strong>Dedicated Infrastructure:</strong> {coe.bedsCount} Speciality Beds</p>
+
+                                        <div className="mt-4 space-y-2">
+                                            {doc.slots.map(s => (
+                                                <div key={s.id} className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center text-xs">
+                                                    <div>
+                                                        <p className="font-bold text-slate-800">{s.time}</p>
+                                                        <p className={`text-[11px] ${s.patient ? 'text-emerald-700 font-semibold' : 'text-slate-400'}`}>{s.patient || 'Slot Vacant'}</p>
+                                                    </div>
+                                                    <span className={`px-2 py-0.5 rounded font-black text-[10px] ${s.status === 'CONFIRMED' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'}`}>
+                                                        {s.status}
+                                                    </span>
+                                                </div>
+                                            ))}
                                         </div>
-                                        <button onClick={() => { setSelectedCoE(coe.id); setActiveTab('DOCTORS_ROSTER'); }} className="w-full py-2.5 bg-brand-cyan hover:bg-brand-cyanHover text-white text-xs font-bold rounded-xl transition shadow">
-                                            Find {coe.name.split(' ')[0]} Doctors
-                                        </button>
                                     </div>
+
+                                    <button
+                                        onClick={() => { setSelectedDocForSlot(doc); setShowSlotModal(true); }}
+                                        className="w-full py-2.5 bg-[#002B49] hover:bg-[#05375C] text-white text-xs font-bold rounded-xl transition shadow"
+                                    >
+                                        + Allocate Patient to Slot
+                                    </button>
                                 </div>
                             ))}
                         </div>
                     </div>
                 )}
 
-                {/* TAB: DOCTOR DIRECTORY */}
-                {activeTab === 'DOCTORS_ROSTER' && (
+                {/* MODULE 3: ZOHO-STYLE PATIENT CRM */}
+                {activeTab === 'ZOHO_CRM' && user.permissions.crm && (
                     <div className="space-y-6">
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                             <div>
-                                <h2 className="text-xl font-black text-brand-navy">Doctor Directory & OPD Consultation Scheduling</h2>
-                                <p className="text-xs text-slate-500">Find doctors by speciality, verify qualifications, and issue real-time OPD tokens.</p>
+                                <h2 className="text-xl font-black text-[#002B49]">Wecure Patient CRM & Lead Funnel (Zoho-Style)</h2>
+                                <p className="text-xs text-slate-500">Accessible by Marketing, PRO Operations, Management, and Founder.</p>
                             </div>
-                            <input
-                                type="text"
-                                placeholder="🔍 Search doctor by name or specialty..."
-                                value={searchQuery}
-                                onChange={e => setSearchQuery(e.target.value)}
-                                className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-brand-cyan w-full md:w-72"
-                            />
+                            <div className="flex space-x-2">
+                                <button onClick={() => setShowLeadModal(true)} className="px-4 py-2 bg-[#00A3E0] hover:bg-[#008AC0] text-white font-black text-xs rounded-xl shadow">
+                                    + Add New Lead / Deal
+                                </button>
+                            </div>
                         </div>
 
-                        {/* COE FILTER PILLS */}
-                        <div className="flex flex-wrap gap-2">
-                            <button onClick={() => setSelectedCoE('ALL')} className={`px-4 py-1.5 text-xs font-bold rounded-xl transition ${selectedCoE === 'ALL' ? 'bg-brand-navy text-white shadow' : 'bg-white border border-slate-200 text-slate-600'}`}>All Specialities</button>
-                            {coeList.map(c => (
-                                <button key={c.id} onClick={() => setSelectedCoE(c.id)} className={`px-4 py-1.5 text-xs font-bold rounded-xl transition ${selectedCoE === c.id ? 'bg-brand-navy text-white shadow' : 'bg-white border border-slate-200 text-slate-600'}`}>
-                                    {c.name.split(' ')[0]}
+                        {/* CRM STAGE FILTER BAR */}
+                        <div className="flex flex-wrap gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200 text-xs font-bold">
+                            {['ALL', 'NEW_INQUIRY', 'CLINICAL_EVAL', 'PROPOSAL_SENT', 'INSURANCE_PREAUTH', 'CONVERTED'].map(st => (
+                                <button
+                                    key={st}
+                                    onClick={() => setCrmStageFilter(st)}
+                                    className={`px-3 py-1.5 rounded-xl transition ${crmStageFilter === st ? 'bg-[#002B49] text-white shadow' : 'text-slate-600'}`}
+                                >
+                                    {st.replace(/_/g, ' ')}
                                 </button>
                             ))}
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {filteredDocs.map(doc => (
-                                <div key={doc.id} className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+                        {/* CRM DEALS PIPELINE TABLE */}
+                        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden divide-y divide-slate-100">
+                            <div className="p-4 bg-slate-50 grid grid-cols-6 text-xs font-black text-slate-500 uppercase tracking-wider">
+                                <span>Patient / Lead</span>
+                                <span>Source</span>
+                                <span>Speciality Required</span>
+                                <span>Deal Tariff</span>
+                                <span>Stage</span>
+                                <span>Assigned Rep & Actions</span>
+                            </div>
+
+                            {filteredLeads.map(lead => (
+                                <div key={lead.id} className="p-4 grid grid-cols-6 items-center text-xs font-medium hover:bg-slate-50 transition">
                                     <div>
-                                        <div className="flex space-x-4 items-start">
-                                            <img src={doc.avatar} alt={doc.name} className="w-20 h-20 rounded-2xl object-cover border-2 border-brand-cyan/20 shadow-sm" />
-                                            <div>
-                                                <span className="px-2 py-0.5 bg-cyan-50 text-brand-cyan text-[10px] font-black rounded uppercase">{doc.coeName}</span>
-                                                <h3 className="text-base font-black text-brand-navy mt-1">{doc.name}</h3>
-                                                <p className="text-xs text-slate-500 font-semibold">{doc.exp}</p>
-                                                <p className="text-[11px] text-amber-500 font-bold mt-1">⭐ {doc.rating} ({doc.reviews})</p>
-                                            </div>
-                                        </div>
-                                        <div className="mt-4 p-3 bg-slate-50 rounded-xl space-y-1 text-xs text-slate-600 font-medium">
-                                            <p className="font-bold text-slate-800">{doc.role}</p>
-                                            <p className="text-[11px] text-slate-500">{doc.qual}</p>
-                                            <p className="text-[11px] text-brand-cyan font-bold pt-1">📅 {doc.opd}</p>
-                                        </div>
+                                        <p className="font-black text-[#002B49]">{lead.name}</p>
+                                        <p className="text-[11px] text-slate-500 font-mono">{lead.phone}</p>
                                     </div>
-                                    <div className="mt-6 flex items-center justify-between pt-4 border-t border-slate-100">
-                                        <div>
-                                            <p className="text-[10px] text-slate-400 font-bold uppercase">Consultation Fee</p>
-                                            <p className="text-base font-black text-brand-navy">{doc.fee}</p>
-                                        </div>
-                                        <button
-                                            onClick={() => { setSelectedDoc(doc); setShowBookingModal(true); }}
-                                            className="px-4 py-2.5 bg-brand-cyan hover:bg-brand-cyanHover text-white font-black text-xs rounded-xl shadow transition"
+                                    <span className="text-slate-600">{lead.source}</span>
+                                    <span className="font-bold text-slate-800">{lead.spec}</span>
+                                    <span className="font-black text-emerald-600">{lead.deal}</span>
+                                    <div>
+                                        <select
+                                            value={lead.stage}
+                                            onChange={e => updateLeadStage(lead.id, e.target.value)}
+                                            className="p-1.5 rounded-lg border text-xs font-bold bg-white focus:outline-none"
                                         >
-                                            Book Appointment
-                                        </button>
+                                            <option value="NEW_INQUIRY">New Inquiry</option>
+                                            <option value="CLINICAL_EVAL">Clinical Evaluation</option>
+                                            <option value="PROPOSAL_SENT">Proposal Sent</option>
+                                            <option value="INSURANCE_PREAUTH">Insurance Pre-Auth</option>
+                                            <option value="CONVERTED">Converted / Admitted</option>
+                                            <option value="LOST">Lost / Dropped</option>
+                                        </select>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* TAB: PREVENTIVE HEALTH PACKAGES */}
-                {activeTab === 'HEALTH_PACKAGES' && (
-                    <div className="space-y-6">
-                        <div>
-                            <h2 className="text-xl font-black text-brand-navy">Preventive Master Health Checkup Packages</h2>
-                            <p className="text-xs text-slate-500">Comprehensive full-body, cardiac, diabetic & cancer screenings.</p>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {packages.map(pkg => (
-                                <div key={pkg.id} className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm hover:shadow-lg transition flex flex-col justify-between">
                                     <div>
-                                        <div className="flex justify-between items-start">
-                                            <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-black rounded-lg uppercase tracking-wider">{pkg.testsCount}</span>
-                                            <span className="text-xs font-bold text-slate-400">{pkg.target}</span>
-                                        </div>
-                                        <h3 className="text-lg font-black text-brand-navy mt-3">{pkg.name}</h3>
-                                        <div className="mt-2 flex items-baseline space-x-2">
-                                            <span className="text-2xl font-black text-brand-cyan">{pkg.price}</span>
-                                            <span className="text-xs text-slate-400 line-through font-bold">{pkg.original}</span>
-                                        </div>
-                                        <ul className="mt-5 space-y-2 text-xs text-slate-600 font-medium">
-                                            {pkg.includes.map((inc, i) => (
-                                                <li key={i} className="flex items-center space-x-2">
-                                                    <span className="text-emerald-500 font-bold">✓</span>
-                                                    <span>{inc}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
+                                        <p className="font-bold text-slate-700">{lead.rep}</p>
+                                        <p className="text-[10px] text-slate-400 truncate">{lead.notes}</p>
                                     </div>
-                                    <button onClick={() => { setSelectedPackage(pkg); setShowPackageModal(true); }} className="mt-6 w-full py-3 bg-brand-navy hover:bg-[#003B64] text-white text-xs font-bold rounded-xl shadow transition">
-                                        Book Health Checkup Slot
-                                    </button>
                                 </div>
                             ))}
                         </div>
                     </div>
                 )}
 
-                {/* TAB: SURGERY COST ESTIMATOR */}
-                {activeTab === 'SURGERY_COSTS' && (
+                {/* MODULE 4: CAPACITY (200 BEDS, 12 NICU, 8 ICU, 5 OTs, 3 AMBULANCES) */}
+                {activeTab === 'BEDS_AND_CAPACITY' && (
                     <div className="space-y-6">
-                        <div>
-                            <h2 className="text-xl font-black text-brand-navy">Surgical Procedures & Transparent Cost Guide</h2>
-                            <p className="text-xs text-slate-500">Estimated tariffs with itemized break-ups for cashless insurance & TPAs.</p>
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div>
+                                <h2 className="text-xl font-black text-[#002B49]">Hospital Capacity Matrix: 200 Beds & Critical Suites</h2>
+                                <p className="text-xs text-slate-500">12 NICU Beds • 8 ICU Beds • 30 Deluxe • 50 Twin-Sharing • 100 General Wards</p>
+                            </div>
+
+                            {/* WARD FILTER PILLS */}
+                            <div className="flex flex-wrap gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200 text-xs font-bold">
+                                {['ALL', 'NICU', 'ICU', 'DELUXE', 'TWIN_SHARING', 'GENERAL'].map(wf => (
+                                    <button
+                                        key={wf}
+                                        onClick={() => setBedFilter(wf)}
+                                        className={`px-3 py-1.5 rounded-xl transition ${bedFilter === wf ? 'bg-[#002B49] text-white shadow' : 'text-slate-600'}`}
+                                    >
+                                        {wf.replace(/_/g, ' ')}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {procedures.map(proc => (
-                                <div key={proc.id} className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition flex flex-col justify-between">
-                                    <div>
-                                        <span className="px-2.5 py-1 bg-cyan-50 text-brand-cyan text-[10px] font-black rounded uppercase">{proc.coe}</span>
-                                        <h3 className="text-base font-black text-brand-navy mt-2">{proc.name}</h3>
-                                        <p className="text-xs text-emerald-600 font-bold mt-1">✓ {proc.tpa}</p>
-                                        <div className="mt-4 p-4 bg-slate-50 rounded-2xl space-y-2 text-xs text-slate-600 font-medium">
-                                            <div className="flex justify-between"><span className="text-slate-400">Hospital Stay:</span><span className="font-bold text-slate-800">{proc.stay}</span></div>
-                                            <div className="flex justify-between"><span className="text-slate-400">Cost Range:</span><span className="font-black text-brand-navy text-sm">{proc.estCost}</span></div>
-                                            <p className="text-[11px] text-slate-500 pt-2 border-t border-slate-200"><strong>Inclusions:</strong> {proc.includes}</p>
-                                        </div>
+                        {/* BED TILES (SCROLLABLE GRID) */}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 max-h-[500px] overflow-y-auto p-1">
+                            {filteredBeds.map(b => (
+                                <div key={b.id} className="p-3 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between h-28">
+                                    <div className="flex justify-between items-start">
+                                        <span className="font-black text-xs text-[#002B49]">{b.id}</span>
+                                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-black ${b.status === 'AVAILABLE' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>{b.status}</span>
                                     </div>
-                                    <button onClick={() => { setSelectedProcedure(proc); setShowCostModal(true); }} className="mt-5 w-full py-2.5 bg-brand-cyan hover:bg-brand-cyanHover text-white text-xs font-bold rounded-xl shadow transition">
-                                        Request Custom Cost Estimate
-                                    </button>
+                                    <div>
+                                        <p className="text-[10px] text-slate-400 font-bold">{b.type} (Floor {b.floor})</p>
+                                        <p className="text-[10px] font-bold text-slate-700 truncate">{b.patient || 'Vacant'}</p>
+                                    </div>
                                 </div>
                             ))}
                         </div>
                     </div>
                 )}
 
-                {/* TAB: 24X7 EMERGENCY */}
-                {activeTab === 'EMERGENCY_24X7' && (
+                {/* MODULE 5: USER MANAGEMENT & RBAC FEATURE TOGGLES */}
+                {activeTab === 'USER_MANAGEMENT_RBAC' && user.permissions.userMgmt && (
                     <div className="space-y-6">
                         <div className="flex justify-between items-center">
                             <div>
-                                <h2 className="text-xl font-black text-brand-rose flex items-center">
-                                    <span className="w-3 h-3 rounded-full bg-brand-rose animate-ping mr-2"></span>
-                                    24x7 Emergency Trauma & Critical Resuscitation
-                                </h2>
-                                <p className="text-xs text-slate-500">Fast-track pathways for STEMI Angioplasty, Stroke Thrombolysis, and Polytrauma.</p>
+                                <h2 className="text-xl font-black text-[#002B49]">User & Role-Based Feature Permission Matrix</h2>
+                                <p className="text-xs text-slate-500">Provision hospital staff and toggle dynamic feature flags across the ERP in real-time.</p>
                             </div>
-                            <button onClick={() => setShowEmergencyModal(true)} className="px-4 py-2.5 bg-brand-rose hover:bg-rose-700 text-white font-black text-xs rounded-xl shadow-lg">
-                                + Log Inbound Code Red
+                            <button onClick={() => setShowUserModal(true)} className="px-4 py-2 bg-[#00A3E0] hover:bg-[#008AC0] text-white font-black text-xs rounded-xl shadow">
+                                + Add Employee / Staff
                             </button>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {emergencyCases.map(em => (
-                                <div key={em.id} className="bg-white p-6 rounded-3xl border-2 border-rose-200 shadow-md">
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <span className="px-2.5 py-1 bg-brand-rose text-white text-[10px] font-black rounded-lg uppercase">{em.code}</span>
-                                            <h3 className="text-base font-black text-brand-navy mt-2">{em.patient}</h3>
-                                            <p className="text-xs text-brand-rose font-bold mt-0.5">{em.condition}</p>
-                                        </div>
-                                        <span className="text-xs font-black text-slate-400">{em.bay}</span>
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-2 mt-4 p-3 bg-slate-50 rounded-xl text-center">
-                                        <div><p className="text-[10px] text-slate-400 font-black uppercase">BP</p><p className="font-black text-slate-900 text-sm">{em.bp}</p></div>
-                                        <div><p className="text-[10px] text-slate-400 font-black uppercase">SpO2</p><p className="font-black text-rose-600 text-sm">{em.spo2}</p></div>
-                                        <div><p className="text-[10px] text-slate-400 font-black uppercase">State</p><p className="font-bold text-amber-600 text-[11px]">{em.status}</p></div>
-                                    </div>
-                                    <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between text-xs font-bold text-slate-600">
-                                        <span>Surgeon: {em.doctor}</span>
-                                        <span className="text-brand-cyan">Resus Bay Active</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* TAB: BED MAP */}
-                {activeTab === 'BED_TELEMETRY' && (
-                    <div className="space-y-6">
-                        <h2 className="text-xl font-black text-brand-navy">Quaternary Bed Map & Telemetry</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                            {beds.map(b => (
-                                <div key={b.id} onClick={() => toggleBedStatus(b.id)} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md cursor-pointer transition flex flex-col justify-between h-40">
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <span className="font-black text-base text-brand-navy">{b.code}</span>
-                                            <p className="text-xs text-slate-500 font-medium">{b.type}</p>
-                                            <p className="text-[11px] text-brand-cyan font-bold mt-0.5">{b.tariff}</p>
-                                        </div>
-                                        <span className={`px-2 py-0.5 text-[10px] font-black rounded-lg border uppercase ${b.status === 'AVAILABLE' ? 'bg-emerald-50 text-emerald-700 border-emerald-300' : 'bg-rose-50 text-rose-700 border-rose-300'}`}>
-                                            {b.status}
-                                        </span>
-                                    </div>
-                                    <div className="text-xs font-semibold flex justify-between text-slate-600">
-                                        <span>{b.patient || 'Vacant / Sanitized'}</span>
-                                        <span className="text-brand-cyan font-bold text-[11px]">Cycle →</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* TAB: TPA & FINANCE */}
-                {activeTab === 'TPA_FINANCE' && (
-                    <div className="space-y-6">
-                        <h2 className="text-xl font-black text-brand-navy">Insurance TPA Split Billing & Ledgers</h2>
-                        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm divide-y divide-slate-100 overflow-hidden">
-                            <div className="p-4 bg-slate-50 flex justify-between text-xs font-black text-slate-500 uppercase tracking-wider">
-                                <span>General Ledger Account</span>
-                                <div className="space-x-12"><span>Debit (DR)</span><span>Credit (CR)</span></div>
+                        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden divide-y divide-slate-100">
+                            <div className="p-4 bg-slate-50 grid grid-cols-7 text-xs font-black text-slate-500 uppercase tracking-wider">
+                                <span className="col-span-2">Staff Member / Role</span>
+                                <span>Exec Hub</span>
+                                <span>Doc Scheduling</span>
+                                <span>Zoho CRM</span>
+                                <span>Beds/OTs</span>
+                                <span>User Mgmt</span>
                             </div>
-                            {ledgers.map(l => (
-                                <div key={l.code} className="p-4 flex justify-between text-xs font-bold">
-                                    <span className="text-slate-800">{l.code} - {l.desc}</span>
-                                    <div className="space-x-12">
-                                        <span className="text-emerald-600 font-black">{l.dr}</span>
-                                        <span className="text-brand-cyan font-black">{l.cr}</span>
+
+                            {usersList.map(u => (
+                                <div key={u.id} className="p-4 grid grid-cols-7 items-center text-xs font-medium hover:bg-slate-50 transition">
+                                    <div className="col-span-2">
+                                        <p className="font-black text-[#002B49]">{u.name}</p>
+                                        <p className="text-[11px] text-slate-400 font-mono">{u.email} • <strong>{u.role}</strong></p>
+                                    </div>
+
+                                    {/* TOGGLES */}
+                                    <div>
+                                        <input
+                                            type="checkbox"
+                                            checked={u.permissions.executive}
+                                            onChange={() => toggleUserPermission(u.id, 'executive')}
+                                            className="w-4 h-4 text-[#00A3E0] rounded cursor-pointer"
+                                        />
+                                    </div>
+                                    <div>
+                                        <input
+                                            type="checkbox"
+                                            checked={u.permissions.docBookingAdmin}
+                                            onChange={() => toggleUserPermission(u.id, 'docBookingAdmin')}
+                                            className="w-4 h-4 text-[#00A3E0] rounded cursor-pointer"
+                                        />
+                                    </div>
+                                    <div>
+                                        <input
+                                            type="checkbox"
+                                            checked={u.permissions.crm}
+                                            onChange={() => toggleUserPermission(u.id, 'crm')}
+                                            className="w-4 h-4 text-[#00A3E0] rounded cursor-pointer"
+                                        />
+                                    </div>
+                                    <div>
+                                        <input
+                                            type="checkbox"
+                                            checked={u.permissions.assets}
+                                            onChange={() => toggleUserPermission(u.id, 'assets')}
+                                            className="w-4 h-4 text-[#00A3E0] rounded cursor-pointer"
+                                        />
+                                    </div>
+                                    <div>
+                                        <input
+                                            type="checkbox"
+                                            checked={u.permissions.userMgmt}
+                                            onChange={() => toggleUserPermission(u.id, 'userMgmt')}
+                                            className="w-4 h-4 text-[#00A3E0] rounded cursor-pointer"
+                                        />
                                     </div>
                                 </div>
                             ))}
@@ -852,182 +674,128 @@ export default function HospitalDashboard() {
                 )}
             </main>
 
-            {/* SIDE DRAWER: AI CDS & WHATSAPP/SMS COMMS FEED */}
-            {showAiDrawer && (
-                <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col p-6 overflow-y-auto">
-                    <div className="flex justify-between items-center pb-4 border-b border-slate-100">
-                        <div>
-                            <h3 className="text-base font-black text-brand-navy">🤖 AI Agents & Comms Core</h3>
-                            <p className="text-[11px] text-brand-cyan font-bold">Autonomous Clinical Decision Support & Omnichannel Feed</p>
-                        </div>
-                        <button onClick={() => setShowAiDrawer(false)} className="text-slate-400 font-bold text-lg">✕</button>
-                    </div>
-
-                    <div className="mt-6 space-y-6">
-                        {/* AI Log Entries */}
-                        <div>
-                            <h4 className="text-xs font-black uppercase text-slate-400 tracking-wider mb-3">Autonomous Reasoning Logs</h4>
-                            <div className="space-y-3">
-                                {aiLogs.map(log => (
-                                    <div key={log.id} className={`p-3.5 rounded-2xl border text-xs ${log.type === 'CRITICAL' ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-slate-50 border-slate-200 text-slate-800'}`}>
-                                        <div className="flex justify-between font-black">
-                                            <span>{log.agent}</span>
-                                            <span className="text-[10px] opacity-75">{log.time}</span>
-                                        </div>
-                                        <p className="mt-1 leading-relaxed font-medium">{log.text}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Dispatch Entries */}
-                        <div>
-                            <h4 className="text-xs font-black uppercase text-slate-400 tracking-wider mb-3">Live Dispatches (WhatsApp / SMS)</h4>
-                            <div className="space-y-3">
-                                {commsFeed.map(c => (
-                                    <div key={c.id} className="p-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-1">
-                                        <div className="flex justify-between items-center">
-                                            <span className={`px-2 py-0.5 rounded font-black text-[10px] ${c.channel === 'WHATSAPP' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}`}>{c.channel}</span>
-                                            <span className="text-[10px] text-slate-400 font-bold">{c.time}</span>
-                                        </div>
-                                        <p className="font-bold text-slate-700">To: {c.to}</p>
-                                        <p className="text-slate-600 bg-white p-2 rounded-xl border border-slate-100 font-mono text-[11px]">{c.text}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* MODAL: OPD BOOKING WITH WHATSAPP/SMS OPTION */}
-            {showBookingModal && selectedDoc && (
+            {/* MODAL: ADD EMPLOYEE / USER */}
+            {showUserModal && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <form onSubmit={handleBooking} className="bg-white rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+                    <form onSubmit={handleAddUser} className="bg-white rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl">
                         <div className="flex justify-between items-start">
                             <div>
-                                <h3 className="text-base font-black text-brand-navy">Book Consultation Appointment</h3>
-                                <p className="text-xs text-brand-cyan font-bold">{selectedDoc.name} • {selectedDoc.coeName}</p>
+                                <h3 className="text-base font-black text-[#002B49]">Provision New Employee</h3>
+                                <p className="text-xs text-slate-400">Assign role and default security permissions.</p>
                             </div>
-                            <button type="button" onClick={() => setShowBookingModal(false)} className="text-slate-400 font-bold">✕</button>
+                            <button type="button" onClick={() => setShowUserModal(false)} className="text-slate-400 font-bold">✕</button>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-bold text-slate-700 mb-1">Full Name</label>
+                            <input type="text" required value={newUserName} onChange={e => setNewUserName(e.target.value)} placeholder="e.g. Dr. Rajesh Reddy" className="w-full p-2.5 border rounded-xl text-xs font-bold" />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-slate-700 mb-1">Patient Full Name</label>
-                            <input type="text" required value={patientName} onChange={e => setPatientName(e.target.value)} placeholder="e.g. Ramesh Kumar" className="w-full p-2.5 border rounded-xl text-xs font-bold" />
+                            <label className="block text-xs font-bold text-slate-700 mb-1">Work Email</label>
+                            <input type="email" required value={newUserEmail} onChange={e => setNewUserEmail(e.target.value)} placeholder="rajesh@wecure.hospital" className="w-full p-2.5 border rounded-xl text-xs font-bold" />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-slate-700 mb-1">Contact Phone (For WhatsApp / SMS)</label>
-                            <input type="tel" required value={patientPhone} onChange={e => setPatientPhone(e.target.value)} placeholder="+91 98490 00000" className="w-full p-2.5 border rounded-xl text-xs font-bold" />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold text-slate-700 mb-1">Preferred Confirmation Channel</label>
-                            <select value={channelPref} onChange={e => setChannelPref(e.target.value)} className="w-full p-2.5 border rounded-xl text-xs font-bold">
-                                <option value="WHATSAPP">WhatsApp Official Notification</option>
-                                <option value="SMS">Standard SMS Gateway</option>
+                            <label className="block text-xs font-bold text-slate-700 mb-1">Security Role</label>
+                            <select value={newUserRole} onChange={e => setNewUserRole(e.target.value)} className="w-full p-2.5 border rounded-xl text-xs font-bold">
+                                <option value="PRO_MARKETING_TEAM">PRO & Marketing Team (CRM Only)</option>
+                                <option value="CRM_MANAGER">CRM Manager (Deals & Pipelines)</option>
+                                <option value="DOCTOR_CONSULTANT">Doctor / Surgeon</option>
+                                <option value="NURSING_DUTY">Inpatient Nursing Station</option>
+                                <option value="EXECUTIVE_MANAGEMENT">Executive Management</option>
+                                <option value="HOSPITAL_ADMIN">Hospital Administrator</option>
                             </select>
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-slate-700 mb-1">Appointment Date</label>
-                            <input type="date" required value={appointmentDate} onChange={e => setAppointmentDate(e.target.value)} className="w-full p-2.5 border rounded-xl text-xs font-bold" />
+                            <label className="block text-xs font-bold text-slate-700 mb-1">Department</label>
+                            <input type="text" value={newUserDept} onChange={e => setNewUserDept(e.target.value)} className="w-full p-2.5 border rounded-xl text-xs font-bold" />
                         </div>
-                        <div>
-                            <label className="block text-xs font-bold text-slate-700 mb-1">Payer Mode</label>
-                            <select value={payerType} onChange={e => setPayerType(e.target.value)} className="w-full p-2.5 border rounded-xl text-xs font-bold">
-                                <option value="CASHLESS_TPA">Cashless Insurance (Star / HDFC Ergo / ICICI)</option>
-                                <option value="SELF_PAY">Direct Cash / UPI Consultation</option>
-                                <option value="CORPORATE">Corporate Health Tie-Up</option>
-                            </select>
-                        </div>
-                        <div className="p-3 bg-slate-50 rounded-xl text-xs flex justify-between font-bold">
-                            <span>Consultation Fee:</span>
-                            <span className="text-brand-navy">{selectedDoc.fee}</span>
-                        </div>
+
                         <div className="flex space-x-2 pt-2">
-                            <button type="button" onClick={() => setShowBookingModal(false)} className="flex-1 py-2.5 border rounded-xl text-xs font-bold">Cancel</button>
-                            <button type="submit" className="flex-1 py-2.5 bg-brand-cyan text-white rounded-xl text-xs font-bold shadow">Confirm Appointment</button>
+                            <button type="button" onClick={() => setShowUserModal(false)} className="flex-1 py-2.5 border rounded-xl text-xs font-bold">Cancel</button>
+                            <button type="submit" className="flex-1 py-2.5 bg-[#00A3E0] text-white rounded-xl text-xs font-bold shadow">Create Staff User</button>
                         </div>
                     </form>
                 </div>
             )}
 
-            {/* MODAL: CODE RED */}
-            {showEmergencyModal && (
-                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <form onSubmit={handleEmergency} className="bg-white rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl border-2 border-brand-rose">
+            {/* MODAL: ADD CRM LEAD */}
+            {showLeadModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <form onSubmit={handleAddLead} className="bg-white rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl">
                         <div className="flex justify-between items-start">
                             <div>
-                                <h3 className="text-base font-black text-brand-rose">🚨 Emergency Code Red Fast-Track</h3>
-                                <p className="text-xs text-slate-500">Notifies Cath Lab, Stroke, and Trauma Resuscitation teams.</p>
+                                <h3 className="text-base font-black text-[#002B49]">Create Patient CRM Deal</h3>
+                                <p className="text-xs text-slate-400">Add inbound inquiry to conversion funnel.</p>
                             </div>
-                            <button type="button" onClick={() => setShowEmergencyModal(false)} className="text-slate-400 font-bold">✕</button>
+                            <button type="button" onClick={() => setShowLeadModal(false)} className="text-slate-400 font-bold">✕</button>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-bold text-slate-700 mb-1">Patient Name</label>
+                            <input type="text" required value={leadName} onChange={e => setLeadName(e.target.value)} placeholder="e.g. M. Rama Krishna" className="w-full p-2.5 border rounded-xl text-xs font-bold" />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-slate-700 mb-1">Protocol</label>
-                            <select value={emCode} onChange={e => setEmCode(e.target.value)} className="w-full p-2.5 border rounded-xl text-xs font-bold">
-                                <option value="CODE_RED">Code Red - Cardiac Arrest / Severe Polytrauma</option>
-                                <option value="CODE_STROKE">Code Stroke - Acute Stroke Resuscitation (&lt; 4.5 hrs)</option>
-                                <option value="CODE_STEMI">Code STEMI - Emergency Angioplasty (&lt; 40 mins)</option>
-                            </select>
+                            <label className="block text-xs font-bold text-slate-700 mb-1">Contact Phone</label>
+                            <input type="tel" required value={leadPhone} onChange={e => setLeadPhone(e.target.value)} placeholder="+91 98490 00000" className="w-full p-2.5 border rounded-xl text-xs font-bold" />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-slate-700 mb-1">Patient Identifier</label>
-                            <input type="text" value={emPatient} onChange={e => setEmPatient(e.target.value)} placeholder="e.g. Unidentified Male (Approx 50y)" className="w-full p-2.5 border rounded-xl text-xs font-bold" />
+                            <label className="block text-xs font-bold text-slate-700 mb-1">Clinical Speciality Needed</label>
+                            <input type="text" required value={leadSpec} onChange={e => setLeadSpec(e.target.value)} className="w-full p-2.5 border rounded-xl text-xs font-bold" />
                         </div>
                         <div className="grid grid-cols-2 gap-2">
-                            <div><label className="block text-xs font-bold text-slate-700 mb-1">BP (mmHg)</label><input type="text" value={emBP} onChange={e => setEmBP(e.target.value)} className="w-full p-2.5 border rounded-xl text-xs font-bold" /></div>
-                            <div><label className="block text-xs font-bold text-slate-700 mb-1">SpO2</label><input type="text" value={emSpo2} onChange={e => setEmSpo2(e.target.value)} className="w-full p-2.5 border rounded-xl text-xs font-bold" /></div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 mb-1">Estimated Tariff</label>
+                                <input type="text" value={leadValue} onChange={e => setLeadValue(e.target.value)} className="w-full p-2.5 border rounded-xl text-xs font-bold" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 mb-1">Inquiry Source</label>
+                                <select value={leadSource} onChange={e => setLeadSource(e.target.value)} className="w-full p-2.5 border rounded-xl text-xs font-bold">
+                                    <option value="Website">Website</option>
+                                    <option value="Doctor Referral">Doctor Referral</option>
+                                    <option value="Health Camp">Health Camp</option>
+                                    <option value="Corporate Tie-Up">Corporate Tie-Up</option>
+                                </select>
+                            </div>
                         </div>
+
                         <div className="flex space-x-2 pt-2">
-                            <button type="button" onClick={() => setShowEmergencyModal(false)} className="flex-1 py-2.5 border rounded-xl text-xs font-bold">Cancel</button>
-                            <button type="submit" className="flex-1 py-2.5 bg-brand-rose text-white rounded-xl text-xs font-bold shadow">Activate Resuscitation</button>
+                            <button type="button" onClick={() => setShowLeadModal(false)} className="flex-1 py-2.5 border rounded-xl text-xs font-bold">Cancel</button>
+                            <button type="submit" className="flex-1 py-2.5 bg-[#00A3E0] text-white rounded-xl text-xs font-bold shadow">Save Lead to CRM</button>
                         </div>
                     </form>
                 </div>
             )}
 
-            {/* MODAL: HEALTH PACKAGE */}
-            {showPackageModal && selectedPackage && (
+            {/* MODAL: ALLOCATE DOCTOR SLOT */}
+            {showSlotModal && selectedDocForSlot && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+                    <form onSubmit={handleAllocateSlot} className="bg-white rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl">
                         <div className="flex justify-between items-start">
                             <div>
-                                <h3 className="text-base font-black text-brand-navy">{selectedPackage.name}</h3>
-                                <p className="text-xs text-emerald-600 font-bold">{selectedPackage.testsCount} • {selectedPackage.price}</p>
+                                <h3 className="text-base font-black text-[#002B49]">Allocate Patient to Slot</h3>
+                                <p className="text-xs text-[#00A3E0] font-bold">{selectedDocForSlot.name} • {selectedDocForSlot.dept}</p>
                             </div>
-                            <button onClick={() => setShowPackageModal(false)} className="text-slate-400 font-bold">✕</button>
+                            <button type="button" onClick={() => setShowSlotModal(false)} className="text-slate-400 font-bold">✕</button>
                         </div>
-                        <p className="text-xs text-slate-600">Reserve your fasting morning slot at {currentLoc.name}. Includes all diagnostic markers and physician review.</p>
-                        <input type="text" placeholder="Patient Full Name" className="w-full p-2.5 border rounded-xl text-xs font-bold" />
-                        <input type="tel" placeholder="Mobile Number" className="w-full p-2.5 border rounded-xl text-xs font-bold" />
-                        <button onClick={() => { alert('Health Checkup slot reserved! An intake coordinator will contact you with fasting instructions.'); setShowPackageModal(false); }} className="w-full py-3 bg-brand-cyan text-white text-xs font-bold rounded-xl shadow">
-                            Confirm Checkup Reservation
-                        </button>
-                    </div>
-                </div>
-            )}
 
-            {/* MODAL: SURGERY ESTIMATE */}
-            {showCostModal && selectedProcedure && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl">
-                        <div className="flex justify-between items-start">
-                            <div>
-                                <h3 className="text-base font-black text-brand-navy">{selectedProcedure.name}</h3>
-                                <p className="text-xs text-brand-cyan font-bold">{selectedProcedure.coe}</p>
-                            </div>
-                            <button onClick={() => setShowCostModal(false)} className="text-slate-400 font-bold">✕</button>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-700 mb-1">Patient Name & UHID</label>
+                            <input type="text" required value={slotPatientName} onChange={e => setSlotPatientName(e.target.value)} placeholder="e.g. Ramesh Kumar (UHID: 9845)" className="w-full p-2.5 border rounded-xl text-xs font-bold" />
                         </div>
-                        <div className="p-3 bg-slate-50 rounded-xl text-xs space-y-1">
-                            <p><strong>Estimated Tariff:</strong> {selectedProcedure.estCost}</p>
-                            <p><strong>Hospitalization:</strong> {selectedProcedure.stay}</p>
-                            <p className="text-emerald-600 font-bold">✓ {selectedProcedure.tpa}</p>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-700 mb-1">Consultation Timing Slot</label>
+                            <select value={slotTime} onChange={e => setSlotTime(e.target.value)} className="w-full p-2.5 border rounded-xl text-xs font-bold">
+                                {selectedDocForSlot.slots.map(s => (
+                                    <option key={s.id} value={s.time}>{s.time} {s.patient ? `(Occupied: ${s.patient})` : '(Available)'}</option>
+                                ))}
+                            </select>
                         </div>
-                        <input type="text" placeholder="Patient Name" className="w-full p-2.5 border rounded-xl text-xs font-bold" />
-                        <input type="tel" placeholder="Phone for Financial Counseling Call" className="w-full p-2.5 border rounded-xl text-xs font-bold" />
-                        <button onClick={() => { alert('Financial counseling request submitted! A billing executive will share the itemized estimate.'); setShowCostModal(false); }} className="w-full py-3 bg-brand-navy text-white text-xs font-bold rounded-xl shadow">
-                            Request Detailed Breakdown
-                        </button>
-                    </div>
+
+                        <div className="flex space-x-2 pt-2">
+                            <button type="button" onClick={() => setShowSlotModal(false)} className="flex-1 py-2.5 border rounded-xl text-xs font-bold">Cancel</button>
+                            <button type="submit" className="flex-1 py-2.5 bg-[#002B49] text-white rounded-xl text-xs font-bold shadow">Confirm Allocation</button>
+                        </div>
+                    </form>
                 </div>
             )}
         </div>
